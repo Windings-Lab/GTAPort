@@ -9,6 +9,12 @@ Documentation
 
 [Lyra Community Discord](https://discord.gg/FpjwcxcDht/)
 
+Upgrading
+----
+[Upgrading Lyra](https://x157.github.io/UE5/LyraStarterGame/Upgrading-Lyra-Core/)
+
+[Upgrading Engine](https://x157.github.io/UE5/Engine/Resave-Assets#ExampleExecution)
+
 Windows Defender Exclusions
 ----
 DISABLE Anti-virus and Windows Defender from performing real-time scans on source directories.
