@@ -1,17 +1,18 @@
-Lyra Sample Game
+Documentation
 ===
 
-Content Information
+[Unreal Engine Lyra documentation](https://docs.unrealengine.com/5.0/en-US/lyra-sample-game-in-unreal-engine/)
+
+[Xist Lyra documentation](https://x157.github.io/) - You can learn Unreal Engine related things too
+
+[Xist Youtube channel](https://www.youtube.com/@XistGG)
+
+[Lyra Community Discord](https://discord.gg/FpjwcxcDht/)
+
+Windows Defender Exclusions
 ----
-When downloading Lyra Source code from git, the content folders are not included.
+DISABLE Anti-virus and Windows Defender from performing real-time scans on source directories.
 
-To make use of the Lyra source code, you will need to download the content from the Unreal Marketplace through the Epic Games Launcher.
+If you fail to do this, every time you switch branches (which can affect 10000s of files in UE), it will re-scan for viruses. It’s an insane waste of time. Just turn it off.
 
-For more information please visit the [Unreal Engine Lyra documentation](https://docs.unrealengine.com/5.0/en-US/lyra-sample-game-in-unreal-engine/)
-
-Once installed, simply copy the content folder inside your solution directory and you should be good to go.
-
-
-Additional Information
-----
-See the [Unreal Engine README](../../../README.md) at the root of the repository for [Licensing](../../../README.md#licensing) and [Contributing](../../../README.md#contributions) information.
+Corollary: Keep viruses out of your source directories. :P
