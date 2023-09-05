@@ -26,6 +26,8 @@ public class UkraineGTA : ModuleRules
 			new string[]
 			{
 				"Core",
+				"LyraGame",
+				"ModularGameplay",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -36,8 +38,9 @@ public class UkraineGTA : ModuleRules
 			{
 				"CoreUObject",
 				"Engine",
-				"Slate",
-				"SlateCore",
+				"GameplayAbilities",
+				"EnhancedInput",
+				"AIModule"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
