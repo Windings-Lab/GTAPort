@@ -7,5 +7,6 @@
 
 AGTACharacter::AGTACharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
 	GTAHeroComponent = CreateDefaultSubobject<UGTAHeroComponent>(TEXT("GTAHeroComponent"));
 }
