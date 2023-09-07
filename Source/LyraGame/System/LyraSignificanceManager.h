@@ -9,7 +9,7 @@
 class UObject;
 
 UCLASS()
-class ULyraSignificanceManager : public USignificanceManager
+class LYRAGAME_API ULyraSignificanceManager : public USignificanceManager
 {
 	GENERATED_BODY()
 

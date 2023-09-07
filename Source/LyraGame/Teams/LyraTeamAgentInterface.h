@@ -24,7 +24,7 @@ inline FGenericTeamId IntegerToGenericTeamId(int32 ID)
 
 /** Interface for actors which can be associated with teams */
 UINTERFACE(meta=(CannotImplementInterfaceInBlueprint))
-class ULyraTeamAgentInterface : public UGenericTeamAgentInterface
+class LYRAGAME_API ULyraTeamAgentInterface : public UGenericTeamAgentInterface
 {
 	GENERATED_UINTERFACE_BODY()
 };

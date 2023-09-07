@@ -25,7 +25,7 @@ DECLARE_DELEGATE_RetVal(TSubclassOf<ULyraCameraMode>, FLyraCameraModeDelegate);
  *	The base camera component class used by this project.
  */
 UCLASS()
-class ULyraCameraComponent : public UCameraComponent
+class LYRAGAME_API ULyraCameraComponent : public UCameraComponent
 {
 	GENERATED_BODY()
 
