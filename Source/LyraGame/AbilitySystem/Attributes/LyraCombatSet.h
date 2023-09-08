@@ -18,7 +18,7 @@ struct FFrame;
  *	Attribute examples include: damage, healing, attack power, and shield penetrations.
  */
 UCLASS(BlueprintType)
-class ULyraCombatSet : public ULyraAttributeSet
+class LYRAGAME_API ULyraCombatSet : public ULyraAttributeSet
 {
 	GENERATED_BODY()
 
