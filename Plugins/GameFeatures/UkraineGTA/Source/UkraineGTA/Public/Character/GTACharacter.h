@@ -6,6 +6,7 @@
 #include "Character/LyraCharacter.h"
 #include "GTACharacter.generated.h"
 
+class UGTACombatSet;
 /**
  * 
  */
@@ -18,6 +19,19 @@ public:
 	AGTACharacter();
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Lyra|Character", Meta = (AllowPrivateAccess = "true"))
+	virtual void OnAbilitySystemInitialized() override;
+	virtual void OnAbilitySystemUninitialized() override;
+
+private:
+	void HandleLowStamina(AActor* StaminaInstigator, AActor* StaminaCauser, const FGameplayEffectSpec* Spec, float Magnitude, float OldValue, float NewValue);
+
+protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="GTA|Abilities", Meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UGameplayAbility> LowStaminaAbility;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UGTAHeroComponent> GTAHeroComponent;
+	
+	UPROPERTY()
+	TObjectPtr<const UGTACombatSet> GTACombatSet;
 };
