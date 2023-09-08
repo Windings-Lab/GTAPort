@@ -28,6 +28,8 @@ public class UkraineGTA : ModuleRules
 				"Core",
 				"LyraGame",
 				"ModularGameplay",
+				"ModularGameplayActors",
+				"GameplayAbilities",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -38,7 +40,6 @@ public class UkraineGTA : ModuleRules
 			{
 				"CoreUObject",
 				"Engine",
-				"GameplayAbilities",
 				"EnhancedInput",
 				"AIModule"
 				// ... add private dependencies that you statically link with here ...	

@@ -27,7 +27,7 @@ struct FGameplayEffectModCallbackData;
  *	Attribute examples include: health, shields, and resistances.
  */
 UCLASS(BlueprintType)
-class ULyraHealthSet : public ULyraAttributeSet
+class LYRAGAME_API ULyraHealthSet : public ULyraAttributeSet
 {
 	GENERATED_BODY()
 
