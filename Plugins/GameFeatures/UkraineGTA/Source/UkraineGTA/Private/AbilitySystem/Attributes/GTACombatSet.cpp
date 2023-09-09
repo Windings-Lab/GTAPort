@@ -85,6 +85,10 @@ bool UGTACombatSet::PreGameplayEffectExecute(FGameplayEffectModCallbackData& Dat
 	{
 		Result = PreGameplayEffectExecuteStamina(Data);
 	}
+	else if(Data.EvaluatedData.Attribute == GetHungerModifierAttribute())
+	{
+		Result = PreGameplayEffectExecuteHunger(Data);
+	}
 
 	return Result;
 }
@@ -173,6 +177,12 @@ void UGTACombatSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackDa
 	{
 		PostGameplayEffectExecuteStamina(Data);
 	}
+	else if(Data.EvaluatedData.Attribute == GetHungerModifierAttribute()
+	|| Data.EvaluatedData.Attribute == GetHungerAttribute()
+	|| Data.EvaluatedData.Attribute == GetMaxHungerAttribute())
+	{
+		PostGameplayEffectExecuteHunger(Data);
+	}
 }
 
 void UGTACombatSet::PostGameplayEffectExecuteArmor(const FGameplayEffectModCallbackData& Data)
@@ -235,7 +245,7 @@ void UGTACombatSet::PostGameplayEffectExecuteStamina(const FGameplayEffectModCal
 #if !UE_BUILD_SHIPPING
 	if (Data.Target.HasMatchingGameplayTag(LyraGameplayTags::Cheat_GodMode))
 	{
-		MinimumStamina = 1.0f;
+		MinimumStamina = 21.0f;
 	}
 #endif // #if !UE_BUILD_SHIPPING
 
@@ -295,7 +305,7 @@ void UGTACombatSet::PostGameplayEffectExecuteHunger(const FGameplayEffectModCall
 #if !UE_BUILD_SHIPPING
 	if (Data.Target.HasMatchingGameplayTag(LyraGameplayTags::Cheat_GodMode))
 	{
-		MinimumHunger = 1.0f;
+		MinimumHunger = 11.0f;
 	}
 #endif // #if !UE_BUILD_SHIPPING
 

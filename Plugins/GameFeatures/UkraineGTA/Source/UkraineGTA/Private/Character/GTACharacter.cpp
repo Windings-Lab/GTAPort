@@ -28,6 +28,7 @@ void AGTACharacter::OnAbilitySystemInitialized()
 	}
 
 	GTACombatSet->OnLowStamina.AddUObject(this, &ThisClass::HandleLowStamina);
+	GTACombatSet->OnLowHunger.AddUObject(this, &AGTACharacter::HandleLowHunger);
 }
 
 void AGTACharacter::OnAbilitySystemUninitialized()
@@ -45,6 +46,27 @@ void AGTACharacter::HandleLowStamina(AActor* StaminaInstigator, AActor* StaminaC
 		Payload.EventTag = FGameplayTag::RequestGameplayTag(TEXT("UkraineGTA.Ability.Debuff.LowStamina"), true);
 		Payload.Instigator = StaminaInstigator;
 		Payload.Target = StaminaCauser;
+		Payload.OptionalObject = Spec->Def;
+		Payload.ContextHandle = Spec->GetEffectContext();
+		Payload.InstigatorTags = *Spec->CapturedSourceTags.GetAggregatedTags();
+		Payload.TargetTags = *Spec->CapturedTargetTags.GetAggregatedTags();
+		Payload.EventMagnitude = Magnitude;
+
+		FScopedPredictionWindow NewScopedWindow(LyraASC, true);
+		LyraASC->HandleGameplayEvent(Payload.EventTag, &Payload);
+	}
+}
+
+void AGTACharacter::HandleLowHunger(AActor* HungerInstigator, AActor* HungerCauser, const FGameplayEffectSpec* Spec,
+	float Magnitude, float OldValue, float NewValue)
+{
+ 	ULyraAbilitySystemComponent* LyraASC = GetLyraAbilitySystemComponent();
+	{
+		FGameplayEventData Payload;
+		// TODO: Create and Define class of UkraineGTA GameplayTags
+		Payload.EventTag = FGameplayTag::RequestGameplayTag(TEXT("UkraineGTA.Ability.Debuff.LowHunger"), true);
+		Payload.Instigator = HungerInstigator;
+		Payload.Target = HungerCauser;
 		Payload.OptionalObject = Spec->Def;
 		Payload.ContextHandle = Spec->GetEffectContext();
 		Payload.InstigatorTags = *Spec->CapturedSourceTags.GetAggregatedTags();
