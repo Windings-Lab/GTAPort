@@ -10,15 +10,12 @@
 struct FGTADamageStatics
 {
 	FGameplayEffectAttributeCaptureDefinition BaseDamageDef;
-
 	FGameplayEffectAttributeCaptureDefinition ArmorModifierDef;
-	FGameplayEffectAttributeCaptureDefinition ArmorPercentReductionDef;
 
 	FGTADamageStatics()
 	{
 		BaseDamageDef = FGameplayEffectAttributeCaptureDefinition(ULyraCombatSet::GetBaseDamageAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 		ArmorModifierDef = FGameplayEffectAttributeCaptureDefinition(UGTACombatSet::GetArmorModifierAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
-		ArmorPercentReductionDef = FGameplayEffectAttributeCaptureDefinition(UGTACombatSet::GetArmorPercentReductionAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 	}
 };
 
@@ -31,7 +28,6 @@ static FGTADamageStatics& DamageStatics()
 UGTADamageExecution::UGTADamageExecution()
 {
 	RelevantAttributesToCapture.Add(DamageStatics().BaseDamageDef);
-	RelevantAttributesToCapture.Add(DamageStatics().ArmorPercentReductionDef);
 	RelevantAttributesToCapture.Add(DamageStatics().ArmorModifierDef);
 }
 
@@ -52,13 +48,14 @@ void UGTADamageExecution::Execute_Implementation(const FGameplayEffectCustomExec
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().BaseDamageDef, EvaluateParameters, BaseDamage);
 	BaseDamage = FMath::Max(BaseDamage, 0.0f);
 	
-	float ArmorReductionPercent = 0.f;
-	ExecutionParams.AttemptCalculateCapturedAttributeBaseValue(DamageStatics().ArmorPercentReductionDef, ArmorReductionPercent);
-
+	float ArmorReductionPercent = ExecutionParams.GetSourceAbilitySystemComponent()->GetNumericAttribute(UGTACombatSet::GetArmorPercentReductionAttribute());
+	float CurrentArmorNormalized = ExecutionParams.GetSourceAbilitySystemComponent()->GetNumericAttribute(UGTACombatSet::GetArmorAttribute());
+	CurrentArmorNormalized = CurrentArmorNormalized > 0.f ? 1.f : 0.f;
+	
 	float DamageToArmor = 0.f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().ArmorModifierDef, EvaluateParameters, DamageToArmor);
 
-	float DamageResult = BaseDamage - (BaseDamage * (ArmorReductionPercent / 100.f));
+	float DamageResult = BaseDamage - (BaseDamage * (ArmorReductionPercent / 100.f)) * CurrentArmorNormalized;
 	
 	if (DamageResult > 0.0f)
 	{

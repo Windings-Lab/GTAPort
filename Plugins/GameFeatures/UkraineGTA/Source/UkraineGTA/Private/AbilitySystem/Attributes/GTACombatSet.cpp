@@ -374,17 +374,6 @@ void UGTACombatSet::PostAttributeChange(const FGameplayAttribute& Attribute, flo
 	{
 		if (GetHunger() > NewValue) LyraASC->ApplyModToAttribute(GetHungerAttribute(), EGameplayModOp::Override, NewValue);
 	}
-	else if(Attribute == GetArmorAttribute())
-	{
-		if (GetArmor() <= 0.0f)
-		{
-			LyraASC->ApplyModToAttribute(GetArmorPercentReductionAttribute(), EGameplayModOp::Override, 0.f);
-		}
-		else
-		{
-			LyraASC->ApplyModToAttribute(GetArmorPercentReductionAttribute(), EGameplayModOp::Override, 95.f);
-		}
-	}
 }
 
 void UGTACombatSet::ClampAttribute(const FGameplayAttribute& Attribute, float& NewValue) const
