@@ -39,8 +39,19 @@ void AGTACharacter::HandleLowStamina(AActor* StaminaInstigator, AActor* StaminaC
 	float Magnitude, float OldValue, float NewValue)
 {
 	ULyraAbilitySystemComponent* LyraASC = GetLyraAbilitySystemComponent();
+	{
+		FGameplayEventData Payload;
+		// TODO: Create and Define class of UkraineGTA GameplayTags
+		Payload.EventTag = FGameplayTag::RequestGameplayTag(TEXT("UkraineGTA.Ability.Debuff.LowStamina"), true);
+		Payload.Instigator = StaminaInstigator;
+		Payload.Target = StaminaCauser;
+		Payload.OptionalObject = Spec->Def;
+		Payload.ContextHandle = Spec->GetEffectContext();
+		Payload.InstigatorTags = *Spec->CapturedSourceTags.GetAggregatedTags();
+		Payload.TargetTags = *Spec->CapturedTargetTags.GetAggregatedTags();
+		Payload.EventMagnitude = Magnitude;
 
-	check(LowStaminaAbility)
-	if(!LowStaminaAbility) return;
-	LyraASC->TryActivateAbilityByClass(LowStaminaAbility, true);
+		FScopedPredictionWindow NewScopedWindow(LyraASC, true);
+		LyraASC->HandleGameplayEvent(Payload.EventTag, &Payload);
+	}
 }
