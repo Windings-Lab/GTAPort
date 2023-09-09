@@ -41,19 +41,38 @@ void UStaminaCalculation::Execute_Implementation(const FGameplayEffectCustomExec
 	EvaluateParameters.SourceTags = SourceTags;
 	EvaluateParameters.TargetTags = TargetTags;
 
+	float Result = 0.f;
 	float StaminaModifier = 0.0f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(StaminaCalcStatics().StaminaModifierDef, EvaluateParameters, StaminaModifier);
 
-	ACharacter* Character = Cast<ACharacter>(ExecutionParams.GetSourceAbilitySystemComponent()->GetAvatarActor());
-	bool RequieredSpeed = Character && Character->GetCharacterMovement()->Velocity.Length() >= 600.f;
-	if(StaminaModifier < 0.f)
+	const auto* Character = Cast<ACharacter>(ExecutionParams.GetSourceAbilitySystemComponent()->GetAvatarActor());
+	check(Character)
+	const auto* CharacterMovement = Character->GetCharacterMovement();
+	const float Speed = CharacterMovement->Velocity.Length();
+	const bool bWalking = CharacterMovement->MovementMode == MOVE_Walking;
+	
+	const float CurrentStamina = ExecutionParams.GetSourceAbilitySystemComponent()->GetNumericAttribute(UGTACombatSet::GetStaminaAttribute());
+	const bool RequiredSpeed = CurrentStamina > 20.f ? Speed >= 600.f : Speed > 0.f;
+	if(Spec.GetDuration() == FGameplayEffectConstants::INSTANT_APPLICATION)
 	{
-		StaminaModifier = RequieredSpeed ? StaminaModifier : 0.f;
+		Result = StaminaModifier;
+	}
+	else if(bWalking)
+	{
+		if(StaminaModifier < 0.f && RequiredSpeed)
+		{
+			Result = StaminaModifier;
+		}
+		else if(StaminaModifier > 0.f)
+		{
+			Result = StaminaModifier;
+		}
 	}
 	
-	if (StaminaModifier != 0.0f)
+	
+	if (Result != 0.0f)
 	{
-		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UGTACombatSet::GetStaminaModifierAttribute(), EGameplayModOp::Additive, StaminaModifier));
+		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UGTACombatSet::GetStaminaModifierAttribute(), EGameplayModOp::Additive, Result));
 	}
 #endif // #if WITH_SERVER_CODE
 }
