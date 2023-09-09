@@ -29,6 +29,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UGTAHeroComponent> GTAHeroComponent;
 	
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<const UGTACombatSet> GTACombatSet;
 };
