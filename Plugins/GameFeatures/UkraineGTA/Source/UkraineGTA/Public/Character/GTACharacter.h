@@ -26,9 +26,6 @@ private:
 	void HandleLowStamina(AActor* StaminaInstigator, AActor* StaminaCauser, const FGameplayEffectSpec* Spec, float Magnitude, float OldValue, float NewValue);
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="GTA|Abilities", Meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<UGameplayAbility> LowStaminaAbility;
-	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UGTAHeroComponent> GTAHeroComponent;
 	
