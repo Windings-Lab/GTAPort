@@ -69,7 +69,6 @@ void UStaminaCalculation::Execute_Implementation(const FGameplayEffectCustomExec
 		}
 	}
 	
-	
 	if (Result != 0.0f)
 	{
 		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UGTACombatSet::GetStaminaModifierAttribute(), EGameplayModOp::Additive, Result));

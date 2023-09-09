@@ -19,11 +19,13 @@ public:
 	AGTACharacter();
 
 protected:
+
 	virtual void OnAbilitySystemInitialized() override;
 	virtual void OnAbilitySystemUninitialized() override;
 
 private:
 	void HandleLowStamina(AActor* StaminaInstigator, AActor* StaminaCauser, const FGameplayEffectSpec* Spec, float Magnitude, float OldValue, float NewValue);
+	void HandleLowHunger(AActor* HungerInstigator, AActor* HungerCauser, const FGameplayEffectSpec* Spec, float Magnitude, float OldValue, float NewValue);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))

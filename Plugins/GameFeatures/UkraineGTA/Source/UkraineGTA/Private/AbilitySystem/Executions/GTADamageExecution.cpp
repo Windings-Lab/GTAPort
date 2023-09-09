@@ -44,6 +44,7 @@ void UGTADamageExecution::Execute_Implementation(const FGameplayEffectCustomExec
 	EvaluateParameters.SourceTags = SourceTags;
 	EvaluateParameters.TargetTags = TargetTags;
 
+	float Result = 0.f;
 	float BaseDamage = 0.0f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().BaseDamageDef, EvaluateParameters, BaseDamage);
 	BaseDamage = FMath::Max(BaseDamage, 0.0f);
@@ -55,11 +56,19 @@ void UGTADamageExecution::Execute_Implementation(const FGameplayEffectCustomExec
 	float DamageToArmor = 0.f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().ArmorModifierDef, EvaluateParameters, DamageToArmor);
 
-	float DamageResult = BaseDamage - (BaseDamage * (ArmorReductionPercent / 100.f)) * CurrentArmorNormalized;
-	
-	if (DamageResult > 0.0f)
+	if(Spec.GetDuration() == FGameplayEffectConstants::INSTANT_APPLICATION)
 	{
-		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(ULyraHealthSet::GetDamageAttribute(), EGameplayModOp::Additive, DamageResult));
+		Result = BaseDamage - (BaseDamage * (ArmorReductionPercent / 100.f)) * CurrentArmorNormalized;
+	}
+	else if(Spec.GetDuration() == FGameplayEffectConstants::INFINITE_DURATION)
+	{
+		Result = BaseDamage;
+		DamageToArmor = 0.f;
+	}
+	
+	if (Result > 0.0f)
+	{
+		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(ULyraHealthSet::GetDamageAttribute(), EGameplayModOp::Additive, Result));
 		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UGTACombatSet::GetArmorModifierAttribute(), EGameplayModOp::Additive, -DamageToArmor));
 	}
 #endif // #if WITH_SERVER_CODE
