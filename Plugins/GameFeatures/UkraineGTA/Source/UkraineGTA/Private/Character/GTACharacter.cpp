@@ -3,6 +3,7 @@
 
 #include "Character/GTACharacter.h"
 
+#include "GTAGameplayTags.h"
 #include "AbilitySystem/LyraAbilitySystemComponent.h"
 #include "AbilitySystem/Attributes/GTACombatSet.h"
 #include "Character/GTAHeroComponent.h"
@@ -43,7 +44,7 @@ void AGTACharacter::HandleLowStamina(AActor* StaminaInstigator, AActor* StaminaC
 	{
 		FGameplayEventData Payload;
 		// TODO: Create and Define class of UkraineGTA GameplayTags
-		Payload.EventTag = FGameplayTag::RequestGameplayTag(TEXT("UkraineGTA.Ability.Debuff.LowStamina"), true);
+		Payload.EventTag = GTAGameplayTags::UkraineGTA_Ability_Debuff_LowStamina;
 		Payload.Instigator = StaminaInstigator;
 		Payload.Target = StaminaCauser;
 		Payload.OptionalObject = Spec->Def;
@@ -64,7 +65,7 @@ void AGTACharacter::HandleLowHunger(AActor* HungerInstigator, AActor* HungerCaus
 	{
 		FGameplayEventData Payload;
 		// TODO: Create and Define class of UkraineGTA GameplayTags
-		Payload.EventTag = FGameplayTag::RequestGameplayTag(TEXT("UkraineGTA.Ability.Debuff.LowHunger"), true);
+		Payload.EventTag = GTAGameplayTags::UkraineGTA_Ability_Debuff_LowHunger;
 		Payload.Instigator = HungerInstigator;
 		Payload.Target = HungerCauser;
 		Payload.OptionalObject = Spec->Def;
