@@ -30,7 +30,9 @@ public class UkraineGTA : ModuleRules
 				"ModularGameplay",
 				"ModularGameplayActors",
 				"GameplayAbilities",
-				"GameplayTags"
+				"GameplayTags",
+				"UMG", 
+				"CommonUI"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
