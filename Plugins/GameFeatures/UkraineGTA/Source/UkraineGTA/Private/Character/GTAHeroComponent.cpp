@@ -3,3 +3,4 @@
 
 #include "Character/GTAHeroComponent.h"
 
+UGTAHeroComponent::UGTAHeroComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}

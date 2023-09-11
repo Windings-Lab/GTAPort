@@ -13,5 +13,7 @@ UCLASS()
 class UKRAINEGTA_API UGTAHeroComponent : public ULyraHeroComponent
 {
 	GENERATED_BODY()
-	
+
+public:
+	UGTAHeroComponent(const FObjectInitializer& ObjectInitializer);
 };
