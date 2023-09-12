@@ -25,17 +25,21 @@
 	"ExplicitlyLoaded": true,
 	"BuiltInInitialFeatureState": "Active",
 	"Plugins": [
-	{
-		"Name": "CommonGame",
-		"Enabled": true
-	},
-	{
-		"Name": "ModularGameplay",
-		"Enabled": true
-	},
-	{
-		"Name": "GameplayAbilities",
-		"Enabled": true
-	}
+		{
+			"Name": "CommonGame",
+			"Enabled": true
+		},
+		{
+			"Name": "ModularGameplay",
+			"Enabled": true
+		},
+		{
+			"Name": "GameplayAbilities",
+			"Enabled": true
+		},
+		{
+			"Name": "GTAVehicles",
+			"Enabled": true
+		}
 	]
 }
