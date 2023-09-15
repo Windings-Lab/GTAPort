@@ -115,7 +115,8 @@ public:
 	virtual bool HasMatchingGameplayTag(FGameplayTag TagToCheck) const override;
 	virtual bool HasAllMatchingGameplayTags(const FGameplayTagContainer& TagContainer) const override;
 	virtual bool HasAnyMatchingGameplayTags(const FGameplayTagContainer& TagContainer) const override;
-
+	
+	UFUNCTION(BlueprintCallable, Category = "Lyra|Character")
 	void ToggleCrouch();
 
 	//~AActor interface
