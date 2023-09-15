@@ -40,6 +40,10 @@
 		{
 			"Name": "GTAVehicles",
 			"Enabled": true
+		},
+		{
+			"Name": "GameplayMessageRouter",
+			"Enabled": true
 		}
 	]
 }

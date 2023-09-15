@@ -313,6 +313,10 @@
 		{
 			"Name": "LyraExtTool",
 			"Enabled": false
+		},
+		{
+			"Name": "SunPosition",
+			"Enabled": true
 		}
 	]
 }

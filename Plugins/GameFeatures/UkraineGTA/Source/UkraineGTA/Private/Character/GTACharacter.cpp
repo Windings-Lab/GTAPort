@@ -44,7 +44,7 @@ void AGTACharacter::HandleLowStamina(AActor* StaminaInstigator, AActor* StaminaC
 	{
 		FGameplayEventData Payload;
 		// TODO: Create and Define class of UkraineGTA GameplayTags
-		Payload.EventTag = GTAGameplayTags::UkraineGTA_Ability_Debuff_LowStamina;
+		Payload.EventTag = GTAGameplayTags::Ability_Debuff_LowStamina;
 		Payload.Instigator = StaminaInstigator;
 		Payload.Target = StaminaCauser;
 		Payload.OptionalObject = Spec->Def;
@@ -65,7 +65,7 @@ void AGTACharacter::HandleLowHunger(AActor* HungerInstigator, AActor* HungerCaus
 	{
 		FGameplayEventData Payload;
 		// TODO: Create and Define class of UkraineGTA GameplayTags
-		Payload.EventTag = GTAGameplayTags::UkraineGTA_Ability_Debuff_LowHunger;
+		Payload.EventTag = GTAGameplayTags::Ability_Debuff_LowHunger;
 		Payload.Instigator = HungerInstigator;
 		Payload.Target = HungerCauser;
 		Payload.OptionalObject = Spec->Def;
