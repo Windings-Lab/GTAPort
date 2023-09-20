@@ -25,7 +25,8 @@ public class GTAVehiclesRuntime : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"Core",
+				"Core", 
+				"LyraGame",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -38,6 +39,8 @@ public class GTAVehiclesRuntime : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"ChaosVehicles",
+				"EnhancedInput"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
