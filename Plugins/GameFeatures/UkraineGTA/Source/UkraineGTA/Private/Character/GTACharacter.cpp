@@ -7,11 +7,43 @@
 #include "AbilitySystem/LyraAbilitySystemComponent.h"
 #include "AbilitySystem/Attributes/GTACombatSet.h"
 #include "Character/GTAHeroComponent.h"
+#include "Character/Components/WaterLogicComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/SphereComponent.h"
 
 AGTACharacter::AGTACharacter()
 {
-	PrimaryActorTick.bCanEverTick = true;
 	GTAHeroComponent = CreateDefaultSubobject<UGTAHeroComponent>(TEXT("GTAHeroComponent"));
+	WaterLogicComponent = CreateDefaultSubobject<UWaterLogicComponent>(TEXT("WaterLogicComponent"));
+
+	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("WaterHeightChecker"));
+	SphereComponent->SetupAttachment(RootComponent);
+
+	SphereComponent->OnComponentBeginOverlap.AddUniqueDynamic(this, &AGTACharacter::OnBeginOverlap);
+	SphereComponent->OnComponentEndOverlap.AddUniqueDynamic(this, &AGTACharacter::OnEndOverlap);
+
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddUniqueDynamic(this, &AGTACharacter::OnBeginOverlap);
+	GetCapsuleComponent()->OnComponentEndOverlap.AddUniqueDynamic(this, &AGTACharacter::OnEndOverlap);
+}
+
+bool AGTACharacter::IsSwimming() const
+{
+	return WaterLogicComponent->IsSwimming();
+}
+
+bool AGTACharacter::IsInWater() const
+{
+	return WaterLogicComponent->IsInWater();
+}
+
+bool AGTACharacter::IsTouchingGroundInWater() const
+{
+	return WaterLogicComponent->IsTouchingGroundInWater();
+}
+
+bool AGTACharacter::CanSwimUp() const
+{
+	return WaterLogicComponent->bCanSwimUp;
 }
 
 void AGTACharacter::OnAbilitySystemInitialized()
@@ -37,13 +69,60 @@ void AGTACharacter::OnAbilitySystemUninitialized()
 	Super::OnAbilitySystemUninitialized();
 }
 
+void AGTACharacter::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
+		, AActor* OtherActor
+		, UPrimitiveComponent* OtherComp
+		, int32 OtherBodyIndex, bool bFromSweep
+		, const FHitResult& SweepResult)
+{
+	if(OverlappedComponent == GetCapsuleComponent())
+	{
+		if(OtherComp->GetCollisionProfileName() == FName(TEXT("WaterBodyCollision")))
+		{
+			if(!IsInWater())
+				WaterLogicComponent->SetAffectedByWater(true);
+		}
+	}
+	else if(OverlappedComponent == SphereComponent)
+	{
+		if(OtherComp->GetCollisionProfileName() == FName(TEXT("WaterBodyCollision")))
+		{
+			if(!IsSwimming() || !CanSwimUp())
+				WaterLogicComponent->SetSwimming(true);
+		}
+	}
+}
+
+void AGTACharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComponent
+		, AActor* OtherActor
+		, UPrimitiveComponent* OtherComp
+		, int32 OtherBodyIndex)
+{
+	if(OverlappedComponent == GetCapsuleComponent())
+	{
+		if(OtherComp->GetCollisionProfileName() == FName(TEXT("WaterBodyCollision")))
+		{
+			if(IsInWater())
+				WaterLogicComponent->SetAffectedByWater(false);
+		}
+	}
+	else if(OverlappedComponent == SphereComponent)
+	{
+		if(OtherComp->GetCollisionProfileName() == FName(TEXT("WaterBodyCollision")))
+		{
+			if(IsSwimming())
+				WaterLogicComponent->SetSwimming(false);
+		}
+	}
+}
+
 void AGTACharacter::HandleLowStamina(AActor* StaminaInstigator, AActor* StaminaCauser, const FGameplayEffectSpec* Spec,
-	float Magnitude, float OldValue, float NewValue)
+                                     float Magnitude, float OldValue, float NewValue)
 {
 	ULyraAbilitySystemComponent* LyraASC = GetLyraAbilitySystemComponent();
 	{
 		FGameplayEventData Payload;
-		// TODO: Create and Define class of UkraineGTA GameplayTags
+
 		Payload.EventTag = GTAGameplayTags::Ability_Debuff_LowStamina;
 		Payload.Instigator = StaminaInstigator;
 		Payload.Target = StaminaCauser;
@@ -64,7 +143,6 @@ void AGTACharacter::HandleLowHunger(AActor* HungerInstigator, AActor* HungerCaus
  	ULyraAbilitySystemComponent* LyraASC = GetLyraAbilitySystemComponent();
 	{
 		FGameplayEventData Payload;
-		// TODO: Create and Define class of UkraineGTA GameplayTags
 		Payload.EventTag = GTAGameplayTags::Ability_Debuff_LowHunger;
 		Payload.Instigator = HungerInstigator;
 		Payload.Target = HungerCauser;

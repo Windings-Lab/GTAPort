@@ -49,7 +49,7 @@ void UStaminaCalculation::Execute_Implementation(const FGameplayEffectCustomExec
 	check(Character)
 	const auto* CharacterMovement = Character->GetCharacterMovement();
 	const float Speed = CharacterMovement->Velocity.Length();
-	const bool bWalking = CharacterMovement->MovementMode == MOVE_Walking;
+	const bool bFlying = CharacterMovement->MovementMode == MOVE_Falling;
 	
 	const float CurrentStamina = ExecutionParams.GetSourceAbilitySystemComponent()->GetNumericAttribute(UGTACombatSet::GetStaminaAttribute());
 	const bool RequiredSpeed = CurrentStamina > 20.f ? Speed >= 600.f : Speed > 0.f;
@@ -57,7 +57,7 @@ void UStaminaCalculation::Execute_Implementation(const FGameplayEffectCustomExec
 	{
 		Result = StaminaModifier;
 	}
-	else if(bWalking)
+	else if(!bFlying)
 	{
 		if(StaminaModifier < 0.f && RequiredSpeed)
 		{

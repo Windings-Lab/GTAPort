@@ -59,6 +59,7 @@ void AGTAWheeledVehicle::OnCarExit(AActor* CarInstigator, ULyraAbilitySystemComp
 		EnteredPawn->SetActorHiddenInGame(false);
 		EnteredPawn->GetRootComponent()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 		EnteredPawn->SetActorEnableCollision(true);
+		EnteredPawn->SetActorRotation(FRotator(0.f, 0.f, .0f));
 	}
 	EnteredPawn = nullptr;
 	Controller = nullptr;
