@@ -100,10 +100,6 @@
 			"Enabled": true
 		},
 		{
-			"Name": "Water",
-			"Enabled": true
-		},
-		{
 			"Name": "CommonUI",
 			"Enabled": true
 		},
@@ -307,6 +303,17 @@
 			"Enabled": true
 		},
 		{
+			"Name": "SunPosition",
+			"Enabled": true
+		},
+		{
+			"Name": "Water",
+			"Enabled": true
+		},
+		{
+			"Name": "WaterExtras",
+			"Enabled": true
+		},
 			"Name": "LyraExampleContent",
 			"Enabled": false
 		},
