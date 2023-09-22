@@ -6,8 +6,10 @@
 #include "AbilitySystem/LyraAbilitySet.h"
 #include "Components/GameFrameworkInitStateInterface.h"
 #include "Interaction/IInteractableTarget.h"
+#include "Interfaces/Vehicle.h"
 #include "GTAWheeledVehicle.generated.h"
 
+class UVehicleExtensionComponent;
 class ULyraCameraMode;
 class ULyraCameraComponent;
 class UCameraComponent;
@@ -22,7 +24,7 @@ struct FInteractionOption;
  * 
  */
 UCLASS()
-class GTAVEHICLESRUNTIME_API AGTAWheeledVehicle : public AWheeledVehiclePawn, public IInteractableTarget
+class GTAVEHICLESRUNTIME_API AGTAWheeledVehicle : public AWheeledVehiclePawn, public IInteractableTarget, public IVehicle
 {
 	GENERATED_BODY()
 
@@ -30,34 +32,29 @@ public:
 	AGTAWheeledVehicle(const FObjectInitializer& ObjectInitializer);
 	
 	virtual void GatherInteractionOptions(const FInteractionQuery& InteractQuery, FInteractionOptionBuilder& OptionBuilder) override;
+	virtual void CustomizeInteractionEventData(const FGameplayTag& InteractionEventTag, FGameplayEventData& InOutEventData) override;
 
-	UFUNCTION(BlueprintCallable)
-	void OnCarEnter(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC, ULyraAbilitySet* AbilitySetToGrant, ULyraInputConfig* InputConfig);
-	UFUNCTION(BlueprintCallable)
-	void OnCarExit(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC);
+protected:
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void OnVehicleEnter(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void OnVehicleExit(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC);
 
 private:
 	TSubclassOf<ULyraCameraMode> DetermineCameraMode() const;
 	
 	void Input_Move(const FInputActionValue& InputActionValue);
-	
-	void Input_AbilityInputTagPressed(FGameplayTag InputTag);
-	void Input_AbilityInputTagReleased(FGameplayTag InputTag);
 
 protected:
-	
 	UPROPERTY(EditAnywhere, Category="VehicleSettings")
 	FInteractionOption Option;
-
-private:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess))
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<ULyraCameraComponent> CameraComponent;
 
-	// Default camera mode used by player controlled pawns.
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Camera", meta=(AllowPrivateAccess))
-	TSubclassOf<ULyraCameraMode> CarCameraMode;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UVehicleExtensionComponent> VehicleExtensionComponent;
 	
-	FLyraAbilitySet_GrantedHandles LoadedAbilitySetHandles;
-	TArray<uint32> LoadedBindHandles;
-	TObjectPtr<APawn> EnteredPawn;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Camera")
+	TSubclassOf<ULyraCameraMode> CarCameraMode;
 };
