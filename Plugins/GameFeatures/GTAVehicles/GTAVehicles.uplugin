@@ -32,6 +32,10 @@
 		{
 			"Name": "EnhancedInput",
 			"Enabled": true
+		},
+		{
+			"Name": "CommonGame",
+			"Enabled": true
 		}
 	]
 }
