@@ -7,6 +7,7 @@
 #include "VehicleExtensionComponent.h"
 #include "Camera/LyraCameraComponent.h"
 #include "Camera/LyraCameraMode.h"
+#include "GameFramework/PawnMovementComponent.h"
 #include "Input/LyraInputComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 
@@ -40,11 +41,6 @@ void AWaterVehiclePawn::CustomizeInteractionEventData(const FGameplayTag& Intera
 void AWaterVehiclePawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-	// FRotator ActorRot = GetActorRotation();
-	// FRotator VelocityRotation = UKismetMathLibrary::RLerp(ActorRot, GetVelocity().ToOrientationRotator()
-	// 	, .1f, false);
-	// SetActorRotation(FRotator(ActorRot.Pitch, VelocityRotation.Yaw, ActorRot.Roll));
 }
 
 TSubclassOf<ULyraCameraMode> AWaterVehiclePawn::DetermineCameraMode() const
@@ -56,36 +52,17 @@ void AWaterVehiclePawn::Input_Move(const FInputActionValue& InputActionValue)
 {
 	FVector Value = InputActionValue.Get<FVector>();
 	
-	FVector ForwardForce = GetActorForwardVector() * (Value.Y * 250.0f);
-	FVector RotationalTorque = FVector(0.0f, 0.f, Value.X * 25.0f);
+	WaterVehicleMesh->GetBodyInstance()->AngularDamping = Value.X == 0.f ? 1.f : 0.f;
+	WaterVehicleMesh->GetBodyInstance()->LinearDamping  = Value.Y == 0.f ? 1.f : 0.f;
+
+	FVector ForwardVector = GetActorForwardVector();
+	ForwardVector.Z = 0.f;
+	
+	FVector ForwardForce = ForwardVector * (Value.Y * 1000.0f);
+	FVector RotationalTorque = FVector(0.0f, 0.f, Value.X * 50.0f);
 	
 	WaterVehicleMesh->AddForce(ForwardForce, NAME_None, true);
 	WaterVehicleMesh->AddTorqueInDegrees(RotationalTorque, TEXT("None"), true);
-
-	FVector NewLinearVelocity = WaterVehicleMesh->GetComponentVelocity().Size() * GetActorForwardVector();
-	WaterVehicleMesh->SetPhysicsLinearVelocity(NewLinearVelocity);
-
-	// Clamp the boat's angular velocity (rotation speed)
-	FVector AngularVelocity = WaterVehicleMesh->GetPhysicsAngularVelocityInDegrees();
-	float MaxAngularVelocity = 50.0f; // Adjust the maximum angular velocity as needed
-
-	if (AngularVelocity.Size() > MaxAngularVelocity)
-	{
-		AngularVelocity.Normalize();
-		AngularVelocity *= MaxAngularVelocity;
-		WaterVehicleMesh->SetPhysicsAngularVelocityInDegrees(AngularVelocity);
-	}
-
-	// Clamp the boat's component velocity (linear speed)
-	FVector Velocity = WaterVehicleMesh->GetComponentVelocity();
-	float MaxLinearSpeed = 1200.0f; // Adjust the maximum linear speed as needed
-
-	if (Velocity.Size() > MaxLinearSpeed)
-	{
-		Velocity.Normalize();
-		Velocity *= MaxLinearSpeed;
-		WaterVehicleMesh->SetPhysicsLinearVelocity(Velocity);
-	}
 }
 
 void AWaterVehiclePawn::OnVehicleEnter_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
