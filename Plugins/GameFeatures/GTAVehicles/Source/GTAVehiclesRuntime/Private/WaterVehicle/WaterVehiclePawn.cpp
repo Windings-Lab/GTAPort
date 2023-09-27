@@ -7,9 +7,7 @@
 #include "VehicleExtensionComponent.h"
 #include "Camera/LyraCameraComponent.h"
 #include "Camera/LyraCameraMode.h"
-#include "GameFramework/PawnMovementComponent.h"
 #include "Input/LyraInputComponent.h"
-#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 AWaterVehiclePawn::AWaterVehiclePawn()
