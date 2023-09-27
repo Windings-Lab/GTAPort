@@ -41,7 +41,8 @@ public class GTAVehiclesRuntime : ModuleRules
 				"Slate",
 				"SlateCore",
 				"ChaosVehicles",
-				"EnhancedInput"
+				"EnhancedInput",
+				"GameplayTags"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

@@ -39,15 +39,15 @@ private:
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	TObjectPtr<class UStaticMeshComponent> WaterVehicleMesh;
-	
-	UPROPERTY(EditAnywhere, Category="VehicleSettings")
-	FInteractionOption Option;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<ULyraCameraComponent> CameraComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UVehicleExtensionComponent> VehicleExtensionComponent;
+	
+	UPROPERTY(EditAnywhere, Category="VehicleSettings")
+	FInteractionOption Option;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Camera")
 	TSubclassOf<ULyraCameraMode> CameraMode;
