@@ -62,9 +62,10 @@ private:
 
 	void UpdatePosition(float DeltaSeconds);
 	
-	void UpdateYaw(float DeltaSeconds, float Yaw);
-	void UpdatePitch(float DeltaSeconds, float Pitch);
-	void UpdateRoll(float DeltaSeconds, float Roll);
+	void UpdateRotation(float DeltaSeconds);
+	void UpdateYaw(float DeltaSeconds);
+	void UpdatePitch(float DeltaSeconds);
+	void UpdateRoll(float DeltaSeconds);
 	
 	void PrintVariables();
 
@@ -110,6 +111,15 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Constants|Control Surfaces")
 	float MaxAileronPitch;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Constants|Rotation")
+	float YawSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Constants|Rotation")
+	float PitchSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Constants|Rotation")
+	float RollSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
 	float ThrustSpeed;

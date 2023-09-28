@@ -47,9 +47,9 @@ void UVehicleExtensionComponent::OnVehicleEnter_Implementation(AActor* CarInstig
 	}
 	
 	Cast<APawn>(GetOwner())->Controller = EnteredPawn->Controller;
-	//EnteredPawn->SetActorHiddenInGame(true);
 	EnteredPawn->GetRootComponent()->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
 	EnteredPawn->SetActorEnableCollision(false);
+	EnteredPawn->SetActorHiddenInGame(true);
 }
 
 void UVehicleExtensionComponent::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)

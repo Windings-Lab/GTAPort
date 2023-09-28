@@ -25,6 +25,10 @@ AAircraftPawn::AAircraftPawn()
 	PrimaryActorTick.bStartWithTickEnabled = true;
 	
 	AircraftMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Fuselage"));
+	AircraftMesh->GetBodyInstance()->bSimulatePhysics = true;
+	AircraftMesh->GetBodyInstance()->bEnableGravity = false; // We are using our own gravity here
+	AircraftMesh->GetBodyInstance()->LinearDamping = 0.6f;
+	AircraftMesh->GetBodyInstance()->AngularDamping = 2.f;
 	RootComponent = AircraftMesh;
 
 	CameraComponent = CreateDefaultSubobject<ULyraCameraComponent>(TEXT("CameraCompon"));
@@ -42,6 +46,10 @@ AAircraftPawn::AAircraftPawn()
 	MaxElevatorPitch = 25.f;
 	MaxRudderYaw = 45.f;
 	MaxAileronPitch = 45.f;
+
+	YawSpeed = 20.f;
+	PitchSpeed = 50.f;
+	RollSpeed = 50.f;
 
 	ThrustSpeed = 0.f;
 	CurrentSpeed = 0.f;
@@ -77,6 +85,7 @@ void AAircraftPawn::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	UpdatePosition(DeltaSeconds);
+	UpdateRotation(DeltaSeconds);
 	PrintVariables();
 }
 
@@ -91,21 +100,21 @@ void AAircraftPawn::Input_Yaw(const FInputActionValue& InputActionValue)
 {
 	float Value = InputActionValue.Get<float>();
 
-	UpdateYaw(GetWorld()->GetDeltaSeconds(), Value);
+	TargetYaw = Value;
 }
 
 void AAircraftPawn::Input_Pitch(const FInputActionValue& InputActionValue)
 {
 	float Value = InputActionValue.Get<float>();
 
-	UpdatePitch(GetWorld()->GetDeltaSeconds(), Value);
+	TargetPitch = Value;
 }
 
 void AAircraftPawn::Input_Roll(const FInputActionValue& InputActionValue)
 {
 	float Value = InputActionValue.Get<float>();
 
-	UpdateRoll(GetWorld()->GetDeltaSeconds(), Value);
+	TargetRoll = Value;
 }
 
 TSubclassOf<ULyraCameraMode> AAircraftPawn::DetermineCameraMode() const
@@ -124,45 +133,59 @@ void AAircraftPawn::UpdatePosition(float DeltaSeconds)
 		CurrentSpeed = ThrustSpeed;
 	}
 
-	FVector NewPosition = GetActorForwardVector() * (CurrentSpeed * DeltaSeconds);
+	FVector NewPosition = GetActorForwardVector() * (CurrentSpeed);
 	AppliedGravity = FMath::GetMappedRangeValueClamped(
 		FVector2D(0.f, MinThrustToNotFall)
 		, FVector2D(Gravity, 0.f)
 		, CurrentSpeed);
 
-	AddActorWorldOffset(FVector(NewPosition.X, NewPosition.Y, NewPosition.Z - AppliedGravity * DeltaSeconds), true);
+	AircraftMesh->AddForce(FVector(NewPosition.X, NewPosition.Y, NewPosition.Z - AppliedGravity)
+		, NAME_None, true);
 }
 
-void AAircraftPawn::UpdateYaw(float DeltaSeconds, float Yaw)
+void AAircraftPawn::UpdateRotation(float DeltaSeconds)
 {
-	TargetYaw = Yaw;
+	UpdateYaw(DeltaSeconds);
+	UpdatePitch(DeltaSeconds);
+	UpdateRoll(DeltaSeconds);
+}
+
+void AAircraftPawn::UpdateYaw(float DeltaSeconds)
+{
 	CurrentYaw = FMath::FInterpTo(CurrentYaw, TargetYaw, DeltaSeconds, 10.f);
 
-	FRotator NewYaw = FRotator(0.f, CurrentYaw * DeltaSeconds * 20.f, 0.f);
-	AddActorLocalRotation(NewYaw, true);
+	if(TargetYaw != 0.f)
+	{
+		FVector NewYaw = (CurrentYaw * YawSpeed) * GetActorUpVector();
+		AircraftMesh->AddTorqueInDegrees(NewYaw, NAME_None, true);
+	}
 
 	K2_OnUpdateYaw();
 }
 
-void AAircraftPawn::UpdatePitch(float DeltaSeconds, float Pitch)
+void AAircraftPawn::UpdatePitch(float DeltaSeconds)
 {
-	TargetPitch = Pitch;
 	CurrentPitch = FMath::FInterpTo(CurrentPitch, TargetPitch, DeltaSeconds, 10.f);
 
-	FRotator NewPitch = FRotator(CurrentPitch * DeltaSeconds * 50.f, 0.f, 0.f);
-	AddActorLocalRotation(NewPitch, true);
-	
+	if(TargetPitch != 0.f)
+	{
+		FVector NewPitch = (CurrentPitch * PitchSpeed) * GetActorRightVector();
+		AircraftMesh->AddTorqueInDegrees(NewPitch, NAME_None, true);
+	}
+
 	K2_OnUpdatePitch();
 }
 
-void AAircraftPawn::UpdateRoll(float DeltaSeconds, float Roll)
+void AAircraftPawn::UpdateRoll(float DeltaSeconds)
 {
-	TargetRoll = Roll;
 	CurrentRoll = FMath::FInterpTo(CurrentRoll, TargetRoll, DeltaSeconds, 10.f);
 
-	FRotator NewRoll = FRotator(0.f, 0.f, CurrentRoll * DeltaSeconds * 20.f);
-	AddActorLocalRotation(NewRoll, true);
-	
+	if(TargetRoll != 0.f)
+	{
+		FVector NewRoll = (CurrentRoll * RollSpeed) * GetActorForwardVector();
+		AircraftMesh->AddTorqueInDegrees(NewRoll, NAME_None, true);
+	}
+
 	K2_OnUpdateRoll();
 }
 
