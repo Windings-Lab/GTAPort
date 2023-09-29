@@ -32,8 +32,6 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 
 private:
-	TSubclassOf<ULyraCameraMode> DetermineCameraMode() const;
-	
 	void Input_Move(const FInputActionValue& InputActionValue);
 
 protected:
@@ -41,14 +39,5 @@ protected:
 	TObjectPtr<class UStaticMeshComponent> WaterVehicleMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<ULyraCameraComponent> CameraComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UVehicleExtensionComponent> VehicleExtensionComponent;
-	
-	UPROPERTY(EditAnywhere, Category="VehicleSettings")
-	FInteractionOption Option;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Camera")
-	TSubclassOf<ULyraCameraMode> CameraMode;
 };

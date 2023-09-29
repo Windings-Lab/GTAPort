@@ -41,20 +41,10 @@ protected:
 	void OnVehicleExit(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC);
 
 private:
-	TSubclassOf<ULyraCameraMode> DetermineCameraMode() const;
 	
 	void Input_Move(const FInputActionValue& InputActionValue);
 
 protected:
-	UPROPERTY(EditAnywhere, Category="VehicleSettings")
-	FInteractionOption Option;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<ULyraCameraComponent> CameraComponent;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UVehicleExtensionComponent> VehicleExtensionComponent;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Camera")
-	TSubclassOf<ULyraCameraMode> CarCameraMode;
 };

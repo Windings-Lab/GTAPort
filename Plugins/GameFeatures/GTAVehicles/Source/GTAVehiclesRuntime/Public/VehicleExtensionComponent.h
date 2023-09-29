@@ -4,9 +4,12 @@
 
 #include "AbilitySystem/LyraAbilitySet.h"
 #include "Components/ActorComponent.h"
+#include "Interaction/InteractionOption.h"
 #include "Interfaces/Vehicle.h"
 #include "VehicleExtensionComponent.generated.h"
 
+class ULyraCameraMode;
+class ULyraCameraComponent;
 class UInputMappingContext;
 class ULyraInputConfig;
 
@@ -19,8 +22,15 @@ public:
 	UVehicleExtensionComponent();
 
 	void AddToNativeInputHandle(int32 Handle);
-	
 	const ULyraInputConfig* GetInputConfig() const;
+
+	bool Entered() const;
+
+	FInteractionOption& GetInteractionOption();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TObjectPtr<ULyraCameraComponent> CameraComponent;
 
 protected:
 	virtual void BeginPlay() override;
@@ -35,6 +45,8 @@ private:
 	void Input_AbilityInputTagPressed(FGameplayTag InputTag);
 	void Input_AbilityInputTagReleased(FGameplayTag InputTag);
 
+	TSubclassOf<ULyraCameraMode> DetermineCameraMode() const;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="GTA|Vehicle")
 	TObjectPtr<ULyraAbilitySet> AbilitySetToGrant;
@@ -45,8 +57,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="GTA|Vehicle")
 	TObjectPtr<UInputMappingContext> MappingContext;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Camera")
+	TSubclassOf<ULyraCameraMode> CameraMode;
+
+	UPROPERTY(EditDefaultsOnly, Category="VehicleSettings")
+	FInteractionOption Option;
+
 private:
 	FLyraAbilitySet_GrantedHandles LoadedAbilitySetHandles;
 	TArray<uint32> LoadedBindHandles;
 	TWeakObjectPtr<APawn> EnteredPawn;
+	bool bEntered;
 };

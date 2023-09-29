@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "NativeGameplayTags.h"
 #include "GameFramework/Pawn.h"
 #include "Interaction/IInteractableTarget.h"
 #include "Interfaces/Vehicle.h"
@@ -13,14 +11,6 @@ struct FInputActionValue;
 class ULyraCameraComponent;
 class UVehicleExtensionComponent;
 class ULyraCameraMode;
-
-namespace GTAAircraft
-{
-	GTAVEHICLESRUNTIME_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Native_Airplane_Thrust);
-	GTAVEHICLESRUNTIME_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Native_Airplane_Yaw);
-	GTAVEHICLESRUNTIME_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Native_Airplane_Pitch);
-	GTAVEHICLESRUNTIME_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Native_Airplane_Roll);
-}
 
 UCLASS()
 class GTAVEHICLESRUNTIME_API AAircraftPawn : public APawn, public IInteractableTarget, public IVehicle
@@ -48,17 +38,13 @@ protected:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void OnVehicleExit(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC);
 
-	virtual void BeginPlay() override;
-
 	virtual void Tick(float DeltaSeconds) override;
 
 private:
-	void Input_Thrust(const FInputActionValue& InputActionValue);
+	void Input_Throttle(const FInputActionValue& InputActionValue);
 	void Input_Yaw(const FInputActionValue& InputActionValue);
 	void Input_Pitch(const FInputActionValue& InputActionValue);
 	void Input_Roll(const FInputActionValue& InputActionValue);
-	
-	TSubclassOf<ULyraCameraMode> DetermineCameraMode() const;
 
 	void UpdatePosition(float DeltaSeconds);
 	
@@ -72,15 +58,6 @@ private:
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UStaticMeshComponent> AircraftMesh;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<ULyraCameraComponent> CameraComponent;
-
-	UPROPERTY(EditDefaultsOnly, Category="VehicleSettings")
-	FInteractionOption Option;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Camera")
-	TSubclassOf<ULyraCameraMode> CameraMode;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UVehicleExtensionComponent> VehicleExtensionComponent;

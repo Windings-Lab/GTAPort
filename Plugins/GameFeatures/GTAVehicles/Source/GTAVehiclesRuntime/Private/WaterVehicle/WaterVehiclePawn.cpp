@@ -14,20 +14,21 @@ AWaterVehiclePawn::AWaterVehiclePawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
+
+
 	
 	WaterVehicleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WaterVehicleMesh"));
 	RootComponent = WaterVehicleMesh;
 
-	CameraComponent = CreateDefaultSubobject<ULyraCameraComponent>(TEXT("CameraCompon"));
-	CameraComponent->SetupAttachment(WaterVehicleMesh);
-
 	VehicleExtensionComponent = CreateDefaultSubobject<UVehicleExtensionComponent>(TEXT("VehicleExtensionComponent"));
+	VehicleExtensionComponent->CameraComponent = CreateDefaultSubobject<ULyraCameraComponent>(TEXT("CameraComponent"));
+	VehicleExtensionComponent->CameraComponent->SetupAttachment(WaterVehicleMesh);
 }
 
 void AWaterVehiclePawn::GatherInteractionOptions(const FInteractionQuery& InteractQuery,
 	FInteractionOptionBuilder& OptionBuilder)
 {
-	OptionBuilder.AddInteractionOption(Option);
+	OptionBuilder.AddInteractionOption(VehicleExtensionComponent->GetInteractionOption());
 }
 
 void AWaterVehiclePawn::CustomizeInteractionEventData(const FGameplayTag& InteractionEventTag,
@@ -39,11 +40,6 @@ void AWaterVehiclePawn::CustomizeInteractionEventData(const FGameplayTag& Intera
 void AWaterVehiclePawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-}
-
-TSubclassOf<ULyraCameraMode> AWaterVehiclePawn::DetermineCameraMode() const
-{
-	return CameraMode ? CameraMode : nullptr;
 }
 
 void AWaterVehiclePawn::Input_Move(const FInputActionValue& InputActionValue)
@@ -73,11 +69,9 @@ void AWaterVehiclePawn::OnVehicleEnter_Implementation(AActor* CarInstigator, ULy
 			VehicleExtensionComponent->AddToNativeInputHandle(LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Move).GetHandle());
 		}
 	}
-	CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
 }
 
 void AWaterVehiclePawn::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
 {
-	CameraComponent->DetermineCameraModeDelegate.Unbind();
 	Controller = nullptr;
 }
