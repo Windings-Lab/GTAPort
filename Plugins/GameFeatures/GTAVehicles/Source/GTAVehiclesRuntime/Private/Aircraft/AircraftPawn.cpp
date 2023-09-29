@@ -4,21 +4,13 @@
 #include "Aircraft/AircraftPawn.h"
 
 #include "InputActionValue.h"
+#include "GTAVehicleGameplayTags.h"
 #include "VehicleExtensionComponent.h"
 #include "Camera/LyraCameraComponent.h"
 #include "Camera/LyraCameraMode.h"
 #include "Input/LyraInputComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-namespace GTAAircraft
-{
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Native_Airplane_Thrust, "InputTag.Native.Airplane.Thrust", "Airplane Thrust");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Native_Airplane_Yaw, "InputTag.Native.Airplane.Yaw", "Airplane Yaw");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Native_Airplane_Pitch, "InputTag.Native.Airplane.Pitch", "Airplane Pitch");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Native_Airplane_Roll, "InputTag.Native.Airplane.Roll", "Airplane Roll");
-}
-
-// Sets default values
 AAircraftPawn::AAircraftPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -31,11 +23,10 @@ AAircraftPawn::AAircraftPawn()
 	AircraftMesh->GetBodyInstance()->AngularDamping = 2.f;
 	RootComponent = AircraftMesh;
 
-	CameraComponent = CreateDefaultSubobject<ULyraCameraComponent>(TEXT("CameraCompon"));
-	CameraComponent->SetupAttachment(RootComponent);
-
 	VehicleExtensionComponent = CreateDefaultSubobject<UVehicleExtensionComponent>(TEXT("VehicleExtensionComponent"));
-
+	VehicleExtensionComponent->CameraComponent = CreateDefaultSubobject<ULyraCameraComponent>(TEXT("CameraComponent"));
+	VehicleExtensionComponent->CameraComponent->SetupAttachment(RootComponent);
+	
 	Drag = 0.25f;
 	Gravity = 981.f;
 	ThrustMultiplier = 2500.f;
@@ -66,18 +57,13 @@ AAircraftPawn::AAircraftPawn()
 void AAircraftPawn::GatherInteractionOptions(const FInteractionQuery& InteractQuery,
 	FInteractionOptionBuilder& OptionBuilder)
 {
-	OptionBuilder.AddInteractionOption(Option);
+	OptionBuilder.AddInteractionOption(VehicleExtensionComponent->GetInteractionOption());
 }
 
 void AAircraftPawn::CustomizeInteractionEventData(const FGameplayTag& InteractionEventTag,
 	FGameplayEventData& InOutEventData)
 {
 	InOutEventData.OptionalObject = VehicleExtensionComponent;
-}
-
-void AAircraftPawn::BeginPlay()
-{
-	Super::BeginPlay();
 }
 
 void AAircraftPawn::Tick(float DeltaSeconds)
@@ -89,7 +75,7 @@ void AAircraftPawn::Tick(float DeltaSeconds)
 	PrintVariables();
 }
 
-void AAircraftPawn::Input_Thrust(const FInputActionValue& InputActionValue)
+void AAircraftPawn::Input_Throttle(const FInputActionValue& InputActionValue)
 {
 	float Value = InputActionValue.Get<float>();
 
@@ -115,11 +101,6 @@ void AAircraftPawn::Input_Roll(const FInputActionValue& InputActionValue)
 	float Value = InputActionValue.Get<float>();
 
 	TargetRoll = Value;
-}
-
-TSubclassOf<ULyraCameraMode> AAircraftPawn::DetermineCameraMode() const
-{
-	return CameraMode ? CameraMode : nullptr;
 }
 
 void AAircraftPawn::UpdatePosition(float DeltaSeconds)
@@ -191,6 +172,7 @@ void AAircraftPawn::UpdateRoll(float DeltaSeconds)
 
 void AAircraftPawn::PrintVariables()
 {
+	if(!VehicleExtensionComponent->Entered()) return;
 	UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("ThrustSpeed: %f"), ThrustSpeed)
 		, true, false, FLinearColor::Green, 1.f, TEXT("ThrustSpeed"));
 
@@ -206,35 +188,33 @@ void AAircraftPawn::OnVehicleEnter_Implementation(AActor* CarInstigator, ULyraAb
 	if(ULyraInputComponent* LyraIC = Cast<ULyraInputComponent>(CarInstigator->InputComponent))
 	{
 		const ULyraInputConfig* InputConfig = VehicleExtensionComponent->GetInputConfig();
-		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAAircraft::InputTag_Native_Airplane_Thrust, false))
+		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Aircraft_Thrust, false))
 		{
 			VehicleExtensionComponent->AddToNativeInputHandle(
-				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Thrust).GetHandle());
+				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Throttle).GetHandle());
 		}
 
-		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAAircraft::InputTag_Native_Airplane_Yaw, false))
+		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Aircraft_Yaw, false))
 		{
 			VehicleExtensionComponent->AddToNativeInputHandle(
 				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Yaw).GetHandle());
 		}
 
-		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAAircraft::InputTag_Native_Airplane_Pitch, false))
+		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Aircraft_Pitch, false))
 		{
 			VehicleExtensionComponent->AddToNativeInputHandle(
 				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Pitch).GetHandle());
 		}
 
-		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAAircraft::InputTag_Native_Airplane_Roll, false))
+		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Aircraft_Roll, false))
 		{
 			VehicleExtensionComponent->AddToNativeInputHandle(
 				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Roll).GetHandle());
 		}
 	}
-	CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
 }
 
 void AAircraftPawn::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
 {
-	CameraComponent->DetermineCameraModeDelegate.Unbind();
 	Controller = nullptr;
 }

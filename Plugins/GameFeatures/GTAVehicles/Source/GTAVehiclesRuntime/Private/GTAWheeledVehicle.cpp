@@ -14,10 +14,9 @@
 AGTAWheeledVehicle::AGTAWheeledVehicle(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	CameraComponent = CreateDefaultSubobject<ULyraCameraComponent>(TEXT("CameraCompon"));
-	CameraComponent->SetupAttachment(RootComponent);
-
 	VehicleExtensionComponent = CreateDefaultSubobject<UVehicleExtensionComponent>(TEXT("VehicleExtensionComponent"));
+	VehicleExtensionComponent->CameraComponent = CreateDefaultSubobject<ULyraCameraComponent>(TEXT("CameraComponent"));
+	VehicleExtensionComponent->CameraComponent->SetupAttachment(RootComponent);
 }
 
 void AGTAWheeledVehicle::OnVehicleEnter_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
@@ -30,13 +29,12 @@ void AGTAWheeledVehicle::OnVehicleEnter_Implementation(AActor* CarInstigator, UL
 			VehicleExtensionComponent->AddToNativeInputHandle(LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Move).GetHandle());
 		}
 	}
-	CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
 }
 
 void AGTAWheeledVehicle::GatherInteractionOptions(const FInteractionQuery& InteractQuery,
                                                   FInteractionOptionBuilder& OptionBuilder)
 {
-	OptionBuilder.AddInteractionOption(Option);
+	OptionBuilder.AddInteractionOption(VehicleExtensionComponent->GetInteractionOption());
 }
 
 void AGTAWheeledVehicle::CustomizeInteractionEventData(const FGameplayTag& InteractionEventTag,
@@ -47,13 +45,7 @@ void AGTAWheeledVehicle::CustomizeInteractionEventData(const FGameplayTag& Inter
 
 void AGTAWheeledVehicle::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
 {
-	CameraComponent->DetermineCameraModeDelegate.Unbind();
 	Controller = nullptr;
-}
-
-TSubclassOf<ULyraCameraMode> AGTAWheeledVehicle::DetermineCameraMode() const
-{
-	return CarCameraMode ? CarCameraMode : nullptr;
 }
 
 void AGTAWheeledVehicle::Input_Move(const FInputActionValue& InputActionValue)

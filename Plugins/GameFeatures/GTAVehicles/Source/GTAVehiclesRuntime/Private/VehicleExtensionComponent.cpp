@@ -5,6 +5,8 @@
 
 #include "EnhancedInputSubsystems.h"
 #include "AbilitySystem/LyraAbilitySystemComponent.h"
+#include "Camera/LyraCameraComponent.h"
+#include "Camera/LyraCameraMode.h"
 #include "Character/LyraPawnExtensionComponent.h"
 #include "Input/LyraInputComponent.h"
 #include "Player/LyraLocalPlayer.h"
@@ -50,6 +52,13 @@ void UVehicleExtensionComponent::OnVehicleEnter_Implementation(AActor* CarInstig
 	EnteredPawn->GetRootComponent()->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
 	EnteredPawn->SetActorEnableCollision(false);
 	EnteredPawn->SetActorHiddenInGame(true);
+
+	if(CameraComponent)
+	{
+		CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
+	}
+
+	bEntered = true;
 }
 
 void UVehicleExtensionComponent::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
@@ -86,6 +95,13 @@ void UVehicleExtensionComponent::OnVehicleExit_Implementation(AActor* CarInstiga
 	EnteredPawn->SetActorEnableCollision(true);
 	EnteredPawn->SetActorRotation(FRotator(0.f, 0.f, .0f));
 	EnteredPawn = nullptr;
+
+	if(CameraComponent)
+	{
+		CameraComponent->DetermineCameraModeDelegate.Unbind();
+	}
+	
+	bEntered = false;
 }
 
 void UVehicleExtensionComponent::AddToNativeInputHandle(int32 Handle)
@@ -96,6 +112,16 @@ void UVehicleExtensionComponent::AddToNativeInputHandle(int32 Handle)
 const ULyraInputConfig* UVehicleExtensionComponent::GetInputConfig() const
 {
 	return InputConfig;
+}
+
+bool UVehicleExtensionComponent::Entered() const
+{
+	return bEntered;
+}
+
+FInteractionOption& UVehicleExtensionComponent::GetInteractionOption()
+{
+	return Option;
 }
 
 void UVehicleExtensionComponent::BeginPlay()
@@ -130,4 +156,9 @@ void UVehicleExtensionComponent::Input_AbilityInputTagReleased(FGameplayTag Inpu
 			LyraASC->AbilityInputTagReleased(InputTag);
 		}
 	}
+}
+
+TSubclassOf<ULyraCameraMode> UVehicleExtensionComponent::DetermineCameraMode() const
+{
+	return CameraMode ? CameraMode : nullptr;
 }
