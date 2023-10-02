@@ -32,22 +32,26 @@ protected:
 	void OnVehicleEnter(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void OnVehicleExit(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC);
-
-	virtual void BeginPlay() override;
 	
 	virtual void Tick(float DeltaTime) override;
 	
 private:
-	void Input_Throttle(const FInputActionValue& InputActionValue);
-	float GetCurrentLift();
-	void UpdatePreviousValues();
+	void Input_MoveUp(const FInputActionValue& InputActionValue);
+	void UpdateBladeRotationSpeed(float DT);
+	void UpdateForceVector(float DT);
+	void AddLinearForce(float DT);
 	
 	void Input_Yaw(const FInputActionValue& InputActionValue);
+	void UpdateYaw(float CurrentTurnSpeed, float DT);
+	
 	void Input_Pitch(const FInputActionValue& InputActionValue);
+	void UpdatePitch(float CurrentTurnSpeed, float DT);
+	
 	void Input_Roll(const FInputActionValue& InputActionValue);
-
-	void RotateBlades(float DeltaTime);
+	void UpdateRoll(float CurrentTurnSpeed, float DT);
+	
 	float GetTurnSpeed();
+	float GetUpForce();
 
 	void PrintVariables();
 
@@ -58,49 +62,55 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UVehicleExtensionComponent> VehicleExtensionComponent;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Dynamic Variables")
-	float TargetBladeRotationSpeed;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Dynamic Variables")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
 	float CurrentBladeRotationSpeed;
-
-	// Velocity
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Dynamic Variables")
-	FVector V;
-
-	// Previous Velocity
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Dynamic Variables")
-	FVector Vp;
-
+	
 	// Acceleration
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Dynamic Variables")
-	FVector A;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	FVector ForceVector;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	FVector CurrentYaw;
 
-	// Previous Acceleration
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Dynamic Variables")
-	FVector Ap;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	float TargetYaw;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Dynamic Variables")
-	FVector PreviousPosition;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	FVector CurrentPitch;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Dynamic Variables")
-	float CurrentTurn;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	float CurrentPitchAngle;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Dynamic Variables")
-	float CurrentPitch;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	float TargetPitch;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	FVector CurrentRoll;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	float CurrentRollAngle;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	float TargetRoll;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	float CurrentThrottle;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	float TargetThrottle;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Constants")
 	float MaxBladeRotationSpeed;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Constants")
-	float ThrottleUpSpeed;
+	float UpForce;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Constants")
 	float TurnSpeed;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Constants")
-	float BlurBladeSpeed;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Constants")
-	TObjectPtr<UCurveFloat> LiftCurve;
+	float MaxSpeed;
+	
+private:
+	bool bBladesAtMaxSpeed;
 };

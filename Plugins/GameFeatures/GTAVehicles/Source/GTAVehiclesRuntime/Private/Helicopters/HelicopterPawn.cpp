@@ -8,7 +8,6 @@
 #include "Camera/LyraCameraComponent.h"
 #include "Camera/LyraCameraMode.h"
 #include "Input/LyraInputComponent.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 AHelicopterPawn::AHelicopterPawn()
@@ -17,16 +16,18 @@ AHelicopterPawn::AHelicopterPawn()
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
 	HelicopterMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body"));
+	HelicopterMesh->GetBodyInstance()->bSimulatePhysics = true;
+	HelicopterMesh->GetBodyInstance()->bEnableGravity = false;
 	RootComponent = HelicopterMesh;
 
 	VehicleExtensionComponent = CreateDefaultSubobject<UVehicleExtensionComponent>(TEXT("VehicleExtensionComponent"));
 	VehicleExtensionComponent->CameraComponent = CreateDefaultSubobject<ULyraCameraComponent>(TEXT("CameraComponent"));
 	VehicleExtensionComponent->CameraComponent->SetupAttachment(RootComponent);
 
-	MaxBladeRotationSpeed = 1500.f;
-	ThrottleUpSpeed = 200.f;
-	TurnSpeed = 0.1;
-	BlurBladeSpeed = 900.f;
+	MaxBladeRotationSpeed = 900.f;
+	UpForce = 1000.f;
+	TurnSpeed = 10.f;
+	MaxSpeed = 3000.f;
 }
 
 void AHelicopterPawn::GatherInteractionOptions(const FInteractionQuery& InteractQuery,
@@ -49,7 +50,7 @@ void AHelicopterPawn::OnVehicleEnter_Implementation(AActor* CarInstigator, ULyra
 		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Aircraft_Thrust, false))
 		{
 			VehicleExtensionComponent->AddToNativeInputHandle(
-				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Throttle).GetHandle());
+				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_MoveUp).GetHandle());
 		}
 
 		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Aircraft_Yaw, false))
@@ -77,111 +78,134 @@ void AHelicopterPawn::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraA
 	Controller = nullptr;
 }
 
-void AHelicopterPawn::BeginPlay()
-{
-	Super::BeginPlay();
-	UpdatePreviousValues();
-}
-
 void AHelicopterPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	UpdateBladeRotationSpeed(DeltaTime);
+	UpdateForceVector(DeltaTime);
+	
+	const float CurrentTurnSpeed = GetTurnSpeed();
+	UpdateYaw(CurrentTurnSpeed, DeltaTime);
+	UpdatePitch(CurrentTurnSpeed, DeltaTime);
+	UpdateRoll(CurrentTurnSpeed, DeltaTime);
 
-	CurrentBladeRotationSpeed = FMath::FInterpTo(CurrentBladeRotationSpeed, TargetBladeRotationSpeed, DeltaTime, 1.f);
-	RotateBlades(DeltaTime);
-		
-	AddActorWorldOffset(V + (A * DeltaTime), true);
+	AddLinearForce(DeltaTime);
+	HelicopterMesh->AddTorqueInDegrees(CurrentYaw, NAME_None, true);
+	HelicopterMesh->AddTorqueInDegrees(CurrentPitch, NAME_None, true);
+	HelicopterMesh->AddTorqueInDegrees(CurrentRoll, NAME_None, true);
 
-	AddActorWorldRotation(FRotator(0.f, CurrentTurn, 0.f));
-	FRotator NewRotation = GetActorRotation();
-	NewRotation = FRotator(NewRotation.Pitch, NewRotation.Yaw, CurrentTurn * 40.f);
-	SetActorRotation(NewRotation);
-
-	if(UKismetMathLibrary::InRange_FloatFloat(GetActorRotation().Pitch * CurrentPitch, -89.f, 89.f, true, true))
-	{
-		AddActorLocalRotation(FRotator(CurrentPitch, 0.f, 0.f));
-	}
+	HelicopterMesh->SetPhysicsLinearVelocity(GetVelocity().GetClampedToMaxSize(MaxSpeed));
 	
 	PrintVariables();
 }
 
-void AHelicopterPawn::RotateBlades(float DeltaTime)
+void AHelicopterPawn::UpdateForceVector(float DT)
 {
-	K2_OnRotateBlades(DeltaTime);
+	FVector UpVector = GetActorUpVector();
+	FVector Gravity;
+	if(bBladesAtMaxSpeed)
+		Gravity = FVector(0.f, 0.f, -30.f);
+	else
+		Gravity = FVector(0.f, 0.f, GetWorldSettings()->GetGravityZ());
+	
+
+	ForceVector = Gravity;
+	ForceVector += GetUpForce() * UpVector * TargetThrottle;
+}
+
+void AHelicopterPawn::AddLinearForce(float DT)
+{
+	bool InputDetected = TargetThrottle || TargetRoll || TargetPitch;
+	if(bBladesAtMaxSpeed && !InputDetected)
+	{
+		FVector TargetVelocity = FMath::VInterpTo(GetVelocity(), FVector::ZeroVector, DT, 0.5f);
+		HelicopterMesh->SetPhysicsLinearVelocity(TargetVelocity);
+	}
+	
+	ForceVector *= HelicopterMesh->GetMass();
+	HelicopterMesh->AddForce(ForceVector);
+}
+
+void AHelicopterPawn::UpdateYaw(float CurrentTurnSpeed, float DT)
+{
+	CurrentYaw = GetActorUpVector() * (CurrentTurnSpeed * TargetYaw) * GetTurnSpeed();
+}
+
+void AHelicopterPawn::UpdatePitch(float CurrentTurnSpeed, float DT)
+{
+	FVector ForwardVector = GetActorForwardVector();
+	
+	CurrentPitchAngle = TargetPitch * 20.f + HelicopterMesh->GetComponentRotation().Pitch;
+	CurrentPitchAngle = FMath::Clamp(CurrentPitchAngle, -20.f, 20.f);
+	CurrentPitch = GetActorRightVector() * CurrentPitchAngle * CurrentTurnSpeed;
+	
+	ForceVector += GetUpForce() * ForwardVector * TargetPitch;
+}
+
+void AHelicopterPawn::UpdateRoll(float CurrentTurnSpeed, float DT)
+{
+	CurrentRollAngle = TargetRoll * 20.f + HelicopterMesh->GetComponentRotation().Roll;
+	CurrentRollAngle = FMath::Clamp(CurrentRollAngle, -20.f, 20.f);
+	CurrentRoll = GetActorForwardVector() * CurrentRollAngle * CurrentTurnSpeed;
+	
+	ForceVector += GetUpForce() * GetActorRightVector() * -TargetRoll;
 }
 
 float AHelicopterPawn::GetTurnSpeed()
 {
-	float Clamped = FMath::GetMappedRangeValueClamped(FVector2D(0.f, 400.f)
-		, FVector2D(0.f, 1.f), GetCurrentLift());
-
-	return TurnSpeed * Clamped;
+	return TurnSpeed * bBladesAtMaxSpeed;
 }
 
-float AHelicopterPawn::GetCurrentLift()
+float AHelicopterPawn::GetUpForce()
 {
-	return LiftCurve->GetFloatValue(CurrentBladeRotationSpeed);
-}
-
-void AHelicopterPawn::UpdatePreviousValues()
-{
-	PreviousPosition = GetActorLocation();
-	Vp = V;
-	Ap = A;
+	return UpForce * bBladesAtMaxSpeed;
 }
 
 void AHelicopterPawn::PrintVariables()
 {
 	if(!VehicleExtensionComponent->Entered()) return;
 
-	UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("CurrentBladeRotationSpeed: %f"), CurrentBladeRotationSpeed)
+	UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("Blade Speed: %f"), CurrentBladeRotationSpeed)
 	, true, false, FLinearColor::Green, 1.f, TEXT("CurrentBladeRotationSpeed"));
+
+	FVector Acceleration = ForceVector / HelicopterMesh->GetMass();
+	UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("Acceleration: %s"), *(Acceleration).ToString())
+	, true, false, FLinearColor::Green, 1.f, TEXT("HeliAcceleration"));
+	
+	UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("CurrentSpeed: %f"), GetVelocity().Size())
+	, true, false, FLinearColor::Green, 1.f, TEXT("HeliSpeed"));
 }
 
-void AHelicopterPawn::Input_Throttle(const FInputActionValue& InputActionValue)
+void AHelicopterPawn::Input_MoveUp(const FInputActionValue& InputActionValue)
 {
 	float InputValue = InputActionValue.Get<float>();
-	float DT = GetWorld()->GetDeltaSeconds();
 
-	float NewTargetBladeRotationSpeed = InputValue * DT * ThrottleUpSpeed;
-	NewTargetBladeRotationSpeed += TargetBladeRotationSpeed;
-	TargetBladeRotationSpeed = FMath::Clamp(NewTargetBladeRotationSpeed, 0.f, MaxBladeRotationSpeed);
+	TargetThrottle = InputValue;
+}
 
-	V = (GetActorLocation() - PreviousPosition) * DT;
-	A = (V - Vp) * DT;
-
-	UpdatePreviousValues();
-
-	// Apply Gravity
-	A += FVector(0.f, 0.f, -981.f);
-
-	// Apply Lift
-	A += (GetActorUpVector() * GetCurrentLift());
-
-	// Simulate forward acceleration
-	FVector CustomUpVector = GetActorUpVector();
-	CustomUpVector.Z = 0.f;
-	A += GetCurrentLift() * CustomUpVector;
+void AHelicopterPawn::UpdateBladeRotationSpeed(float DT)
+{
+	float BladeAcceleration = VehicleExtensionComponent->Entered() ? 200.f : -200.f;
+	CurrentBladeRotationSpeed += DT * BladeAcceleration;
+	CurrentBladeRotationSpeed = FMath::Clamp(CurrentBladeRotationSpeed, 0.f, MaxBladeRotationSpeed);
+	bBladesAtMaxSpeed = CurrentBladeRotationSpeed >= MaxBladeRotationSpeed;
+	K2_OnRotateBlades(DT);
 }
 
 void AHelicopterPawn::Input_Yaw(const FInputActionValue& InputActionValue)
 {
 	float InputValue = InputActionValue.Get<float>();
-	float DT = GetWorld()->GetDeltaSeconds();
-
-	CurrentTurn = FMath::FInterpTo(CurrentTurn, GetTurnSpeed() * InputValue, DT, 2.f);
+	TargetYaw = InputValue;
 }
-
 void AHelicopterPawn::Input_Pitch(const FInputActionValue& InputActionValue)
 {
 	float InputValue = InputActionValue.Get<float>();
-	float DT = GetWorld()->GetDeltaSeconds();
-
-	CurrentPitch = FMath::FInterpTo(CurrentPitch, GetTurnSpeed() * InputValue, DT, 2.f);
+	TargetPitch = InputValue;
 }
-
 void AHelicopterPawn::Input_Roll(const FInputActionValue& InputActionValue)
 {
 	float Value = InputActionValue.Get<float>();
+	TargetRoll = Value;
 }
 
