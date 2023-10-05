@@ -188,25 +188,25 @@ void AAircraftPawn::OnVehicleEnter_Implementation(AActor* CarInstigator, ULyraAb
 	if(ULyraInputComponent* LyraIC = Cast<ULyraInputComponent>(CarInstigator->InputComponent))
 	{
 		const ULyraInputConfig* InputConfig = VehicleExtensionComponent->GetInputConfig();
-		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Aircraft_Thrust, false))
+		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Thrust, false))
 		{
 			VehicleExtensionComponent->AddToNativeInputHandle(
 				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Throttle).GetHandle());
 		}
 
-		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Aircraft_Yaw, false))
+		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Yaw, false))
 		{
 			VehicleExtensionComponent->AddToNativeInputHandle(
 				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Yaw).GetHandle());
 		}
 
-		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Aircraft_Pitch, false))
+		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Pitch, false))
 		{
 			VehicleExtensionComponent->AddToNativeInputHandle(
 				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Pitch).GetHandle());
 		}
 
-		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Aircraft_Roll, false))
+		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Roll, false))
 		{
 			VehicleExtensionComponent->AddToNativeInputHandle(
 				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Roll).GetHandle());
