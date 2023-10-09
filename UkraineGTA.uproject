@@ -128,10 +128,6 @@
 			"Enabled": true
 		},
 		{
-			"Name": "PocketWorlds",
-			"Enabled": true
-		},
-		{
 			"Name": "UIExtension",
 			"Enabled": true
 		},
@@ -283,27 +279,7 @@
 			"Enabled": true
 		},
 		{
-			"Name": "ShooterCore",
-			"Enabled": true
-		},
-		{
-			"Name": "ShooterMaps",
-			"Enabled": true
-		},
-		{
-			"Name": "TopDownArena",
-			"Enabled": true
-		},
-		{
 			"Name": "FunctionalTestingEditor",
-			"Enabled": true
-		},
-		{
-			"Name": "ShooterExplorer",
-			"Enabled": true
-		},
-		{
-			"Name": "ShooterTests",
 			"Enabled": true
 		},
 		{
@@ -329,6 +305,14 @@
 		{
 			"Name": "GameplayBehaviors",
 			"Enabled": true
+		},
+		{
+			"Name": "LyraExampleContent",
+			"Enabled": false
+		},
+		{
+			"Name": "LyraExtTool",
+			"Enabled": false
 		}
 	]
 }
