@@ -321,6 +321,10 @@
 		{
 			"Name": "LyraExtTool",
 			"Enabled": false
+		},
+		{
+			"Name": "ShooterCore",
+			"Enabled": true
 		}
 	]
 }

@@ -14,7 +14,7 @@ class UObject;
 struct FFrame;
 
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
-class ULyraQuickBarComponent : public UControllerComponent
+class LYRAGAME_API ULyraQuickBarComponent : public UControllerComponent
 {
 	GENERATED_BODY()
 

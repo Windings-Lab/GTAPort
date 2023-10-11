@@ -46,6 +46,7 @@ private:
 	void Input_AbilityInputTagReleased(FGameplayTag InputTag);
 
 	TSubclassOf<ULyraCameraMode> DetermineCameraMode() const;
+	void SetEnteredPawnHidden(bool Value);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="GTA|Vehicle")

@@ -6,6 +6,7 @@
 #include "Interfaces/CanSwim.h"
 #include "GTACharacter.generated.h"
 
+class ULyraInventoryItemDefinition;
 class UGTACombatSet;
 /**
  * 
@@ -18,7 +19,7 @@ class UKRAINEGTA_API AGTACharacter : public ALyraCharacter, public ICanSwim
 public:
 	AGTACharacter();
 
-	//~WaterLogic Aggregation
+	//~ICanSwim Interface
 	UFUNCTION(BlueprintCallable)
 		virtual bool IsSwimming() const override;
 	UFUNCTION(BlueprintCallable)
@@ -27,10 +28,16 @@ public:
 		virtual bool IsTouchingGroundInWater() const override;
 	UFUNCTION(BlueprintCallable)
 		virtual bool CanSwimUp() const override;
-	//~End of WaterLogic Aggregation
+	//~End of ICanSwim Interface
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void K2_OnSetSwimming(bool Value);
+
+	UFUNCTION(BlueprintCallable)
+	void AddInitialInventory();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnInitialUnarmed();
 
 protected:
 	virtual void OnAbilitySystemInitialized() override;
@@ -49,22 +56,27 @@ protected:
 		, UPrimitiveComponent* OtherComp
 		, int32 OtherBodyIndex);
 
-private:
-	void HandleLowStamina(AActor* StaminaInstigator, AActor* StaminaCauser, const FGameplayEffectSpec* Spec, float Magnitude, float OldValue, float NewValue);
-	void HandleLowHunger(AActor* HungerInstigator, AActor* HungerCauser, const FGameplayEffectSpec* Spec, float Magnitude, float OldValue, float NewValue);
-
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UGTAHeroComponent> GTAHeroComponent;
-	
-	UPROPERTY(BlueprintReadOnly, Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<const UGTACombatSet> GTACombatSet;
 
-	//~Water Logic
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class USphereComponent> SphereComponent;
+	TObjectPtr<class UStaminaHandlerComponent> StaminaComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UHungerHandlerComponent> HungerComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UArmorHandlerComponent> ArmorComponent;
+
+	//~Begin of Water Logic
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UWaterLogicComponent> WaterLogicComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class USphereComponent> WaterHeightChecker;
 	//~End of Water Logic
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GTA|Character|Inventory", Meta = (AllowPrivateAccess = "true"))
+	TArray<TSubclassOf<ULyraInventoryItemDefinition>> InitialInventoryItems;
 };

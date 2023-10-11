@@ -7,23 +7,31 @@
 #include "AbilitySystem/LyraAbilitySystemComponent.h"
 #include "AbilitySystem/Attributes/GTACombatSet.h"
 #include "Character/GTAHeroComponent.h"
+#include "Character/Components/ArmorHandlerComponent.h"
+#include "Character/Components/HungerHandlerComponent.h"
+#include "Character/Components/StaminaHandlerComponent.h"
 #include "Character/Components/WaterLogicComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
+#include "Equipment/LyraQuickBarComponent.h"
+#include "Inventory/LyraInventoryManagerComponent.h"
 
 AGTACharacter::AGTACharacter()
 {
 	GTAHeroComponent = CreateDefaultSubobject<UGTAHeroComponent>(TEXT("GTAHeroComponent"));
+	
 	WaterLogicComponent = CreateDefaultSubobject<UWaterLogicComponent>(TEXT("WaterLogicComponent"));
-
-	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("WaterHeightChecker"));
-	SphereComponent->SetupAttachment(RootComponent);
-
-	SphereComponent->OnComponentBeginOverlap.AddUniqueDynamic(this, &AGTACharacter::OnBeginOverlap);
-	SphereComponent->OnComponentEndOverlap.AddUniqueDynamic(this, &AGTACharacter::OnEndOverlap);
+	WaterHeightChecker = CreateDefaultSubobject<USphereComponent>(TEXT("WaterHeightChecker"));
+	WaterHeightChecker->OnComponentBeginOverlap.AddUniqueDynamic(this, &AGTACharacter::OnBeginOverlap);
+	WaterHeightChecker->OnComponentEndOverlap.AddUniqueDynamic(this, &AGTACharacter::OnEndOverlap);
+	WaterHeightChecker->SetupAttachment(RootComponent);
 
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddUniqueDynamic(this, &AGTACharacter::OnBeginOverlap);
 	GetCapsuleComponent()->OnComponentEndOverlap.AddUniqueDynamic(this, &AGTACharacter::OnEndOverlap);
+
+	StaminaComponent = CreateDefaultSubobject<UStaminaHandlerComponent>(TEXT("StaminaComponent"));
+	HungerComponent  = CreateDefaultSubobject<UHungerHandlerComponent>(TEXT("HungerComponent"));
+	ArmorComponent   = CreateDefaultSubobject<UArmorHandlerComponent>(TEXT("ArmorComponent"));
 }
 
 bool AGTACharacter::IsSwimming() const
@@ -46,27 +54,48 @@ bool AGTACharacter::CanSwimUp() const
 	return WaterLogicComponent->bCanSwimUp;
 }
 
+void AGTACharacter::AddInitialInventory()
+{
+	if(!HasAuthority()) return;
+	
+	auto* Inventory = Controller->GetComponentByClass<ULyraInventoryManagerComponent>();
+	auto* QuickBar = Controller->GetComponentByClass<ULyraQuickBarComponent>();
+
+	if(!Inventory || !QuickBar) return;
+	
+	for(int slotIndex = 0; slotIndex < InitialInventoryItems.Num(); slotIndex++)
+	{
+		auto* ItemInstance = Inventory->AddItemDefinition(InitialInventoryItems[slotIndex], 1);
+		QuickBar->AddItemToSlot(slotIndex, ItemInstance);
+	}
+
+	if(!InitialInventoryItems.IsEmpty())
+	{
+		QuickBar->SetActiveSlotIndex(0);
+	}
+	else
+	{
+		OnInitialUnarmed();
+	}
+}
+
 void AGTACharacter::OnAbilitySystemInitialized()
 {
 	Super::OnAbilitySystemInitialized();
 
 	ULyraAbilitySystemComponent* LyraASC = GetLyraAbilitySystemComponent();
 
-	GTACombatSet = LyraASC->GetSet<UGTACombatSet>();
-	check(GTACombatSet)
-	
-	if (!GTACombatSet)
-	{
-		return;
-	}
-
-	GTACombatSet->OnLowStamina.AddUObject(this, &ThisClass::HandleLowStamina);
-	GTACombatSet->OnLowHunger.AddUObject(this, &AGTACharacter::HandleLowHunger);
+	StaminaComponent->InitializeWithAbilitySystem(LyraASC);
+	HungerComponent->InitializeWithAbilitySystem(LyraASC);
+	ArmorComponent->InitializeWithAbilitySystem(LyraASC);
 }
 
 void AGTACharacter::OnAbilitySystemUninitialized()
 {
 	Super::OnAbilitySystemUninitialized();
+	StaminaComponent->UninitializeFromAbilitySystem();
+	HungerComponent->UninitializeFromAbilitySystem();
+	ArmorComponent->UninitializeFromAbilitySystem();
 }
 
 void AGTACharacter::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
@@ -83,7 +112,7 @@ void AGTACharacter::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
 				WaterLogicComponent->SetAffectedByWater(true);
 		}
 	}
-	else if(OverlappedComponent == SphereComponent)
+	else if(OverlappedComponent == WaterHeightChecker)
 	{
 		if(OtherComp->GetCollisionProfileName() == FName(TEXT("WaterBodyCollision")))
 		{
@@ -106,53 +135,12 @@ void AGTACharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComponent
 				WaterLogicComponent->SetAffectedByWater(false);
 		}
 	}
-	else if(OverlappedComponent == SphereComponent)
+	else if(OverlappedComponent == WaterHeightChecker)
 	{
 		if(OtherComp->GetCollisionProfileName() == FName(TEXT("WaterBodyCollision")))
 		{
 			if(IsSwimming())
 				WaterLogicComponent->SetSwimming(false);
 		}
-	}
-}
-
-void AGTACharacter::HandleLowStamina(AActor* StaminaInstigator, AActor* StaminaCauser, const FGameplayEffectSpec* Spec,
-                                     float Magnitude, float OldValue, float NewValue)
-{
-	ULyraAbilitySystemComponent* LyraASC = GetLyraAbilitySystemComponent();
-	{
-		FGameplayEventData Payload;
-
-		Payload.EventTag = GTAGameplayTags::Ability_Debuff_LowStamina;
-		Payload.Instigator = StaminaInstigator;
-		Payload.Target = StaminaCauser;
-		Payload.OptionalObject = Spec->Def;
-		Payload.ContextHandle = Spec->GetEffectContext();
-		Payload.InstigatorTags = *Spec->CapturedSourceTags.GetAggregatedTags();
-		Payload.TargetTags = *Spec->CapturedTargetTags.GetAggregatedTags();
-		Payload.EventMagnitude = Magnitude;
-
-		FScopedPredictionWindow NewScopedWindow(LyraASC, true);
-		LyraASC->HandleGameplayEvent(Payload.EventTag, &Payload);
-	}
-}
-
-void AGTACharacter::HandleLowHunger(AActor* HungerInstigator, AActor* HungerCauser, const FGameplayEffectSpec* Spec,
-	float Magnitude, float OldValue, float NewValue)
-{
- 	ULyraAbilitySystemComponent* LyraASC = GetLyraAbilitySystemComponent();
-	{
-		FGameplayEventData Payload;
-		Payload.EventTag = GTAGameplayTags::Ability_Debuff_LowHunger;
-		Payload.Instigator = HungerInstigator;
-		Payload.Target = HungerCauser;
-		Payload.OptionalObject = Spec->Def;
-		Payload.ContextHandle = Spec->GetEffectContext();
-		Payload.InstigatorTags = *Spec->CapturedSourceTags.GetAggregatedTags();
-		Payload.TargetTags = *Spec->CapturedTargetTags.GetAggregatedTags();
-		Payload.EventMagnitude = Magnitude;
-
-		FScopedPredictionWindow NewScopedWindow(LyraASC, true);
-		LyraASC->HandleGameplayEvent(Payload.EventTag, &Payload);
 	}
 }

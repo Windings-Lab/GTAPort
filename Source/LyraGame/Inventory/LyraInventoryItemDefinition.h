@@ -29,7 +29,7 @@ public:
  * ULyraInventoryItemDefinition
  */
 UCLASS(Blueprintable, Const, Abstract)
-class ULyraInventoryItemDefinition : public UObject
+class LYRAGAME_API ULyraInventoryItemDefinition : public UObject
 {
 	GENERATED_BODY()
 

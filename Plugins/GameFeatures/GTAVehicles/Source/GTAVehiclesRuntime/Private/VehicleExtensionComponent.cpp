@@ -51,7 +51,7 @@ void UVehicleExtensionComponent::OnVehicleEnter_Implementation(AActor* CarInstig
 	Cast<APawn>(GetOwner())->Controller = EnteredPawn->Controller;
 	EnteredPawn->GetRootComponent()->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
 	EnteredPawn->SetActorEnableCollision(false);
-	EnteredPawn->SetActorHiddenInGame(true);
+	SetEnteredPawnHidden(true);
 
 	if(CameraComponent)
 	{
@@ -90,7 +90,7 @@ void UVehicleExtensionComponent::OnVehicleExit_Implementation(AActor* CarInstiga
 	}
 	
 	LoadedAbilitySetHandles.TakeFromAbilitySystem(LyraASC);
-	EnteredPawn->SetActorHiddenInGame(false);
+	SetEnteredPawnHidden(false);
 	EnteredPawn->GetRootComponent()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 	EnteredPawn->SetActorEnableCollision(true);
 	EnteredPawn->SetActorRotation(FRotator(0.f, 0.f, .0f));
@@ -102,6 +102,19 @@ void UVehicleExtensionComponent::OnVehicleExit_Implementation(AActor* CarInstiga
 	}
 	
 	bEntered = false;
+}
+
+void UVehicleExtensionComponent::SetEnteredPawnHidden(bool Value)
+{
+	if(!EnteredPawn.IsValid()) return;
+
+	TArray<AActor*> AttachedActors;
+	EnteredPawn->GetAttachedActors(AttachedActors, false);
+	for (auto* AttachedActor : AttachedActors)
+	{
+		AttachedActor->SetActorHiddenInGame(Value);
+	}
+	EnteredPawn->SetActorHiddenInGame(Value);
 }
 
 void UVehicleExtensionComponent::AddToNativeInputHandle(int32 Handle)

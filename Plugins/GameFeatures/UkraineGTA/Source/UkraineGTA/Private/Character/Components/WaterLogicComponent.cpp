@@ -11,7 +11,8 @@
 #include "GameFramework/PhysicsVolume.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-UWaterLogicComponent::UWaterLogicComponent(): bSwimming(false), bWaterAffection(false)
+UWaterLogicComponent::UWaterLogicComponent(): bCanSwimUp(false), bSwimming(false), bWaterAffection(false),
+                                              bTouchingGround(false)
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
