@@ -60,16 +60,16 @@ void AGTACharacter::AddInitialInventory()
 	
 	auto* Inventory = Controller->GetComponentByClass<ULyraInventoryManagerComponent>();
 	auto* QuickBar = Controller->GetComponentByClass<ULyraQuickBarComponent>();
-
 	if(!Inventory || !QuickBar) return;
-	
+
+	Inventory->AddEmptySlots(14);
 	for(int slotIndex = 0; slotIndex < InitialInventoryItems.Num(); slotIndex++)
 	{
-		auto* ItemInstance = Inventory->AddItemDefinition(InitialInventoryItems[slotIndex], 1);
+		auto* ItemInstance = Inventory->ChangeInventorySlot(InitialInventoryItems[slotIndex], 1);
 		QuickBar->AddItemToSlot(slotIndex, ItemInstance);
 	}
 
-	if(!InitialInventoryItems.IsEmpty())
+	if(!QuickBar->GetSlots().IsEmpty() && QuickBar->GetSlots()[0])
 	{
 		QuickBar->SetActiveSlotIndex(0);
 	}

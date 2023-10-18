@@ -18,12 +18,28 @@ ULyraInventoryItemInstance::ULyraInventoryItemInstance(const FObjectInitializer&
 {
 }
 
+bool ULyraInventoryItemInstance::IsEmpty() const
+{
+	return ItemDef == nullptr;
+}
+
+int32 ULyraInventoryItemInstance::GetStackCount() const
+{
+	return ItemCount;
+}
+
+bool ULyraInventoryItemInstance::IsStackable() const
+{
+	return IsEmpty() ? false : ItemDef.GetDefaultObject()->bStackable;
+}
+
 void ULyraInventoryItemInstance::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, StatTags);
 	DOREPLIFETIME(ThisClass, ItemDef);
+	DOREPLIFETIME(ThisClass, ItemCount);
 }
 
 #if UE_WITH_IRIS
@@ -61,7 +77,7 @@ void ULyraInventoryItemInstance::SetItemDef(TSubclassOf<ULyraInventoryItemDefini
 	ItemDef = InDef;
 }
 
-const ULyraInventoryItemFragment* ULyraInventoryItemInstance::FindFragmentByClass(TSubclassOf<ULyraInventoryItemFragment> FragmentClass) const
+const ULyraInventoryItemFragment* ULyraInventoryItemInstance::FindFragmentByClassConst(TSubclassOf<ULyraInventoryItemFragment> FragmentClass) const
 {
 	if ((ItemDef != nullptr) && (FragmentClass != nullptr))
 	{
@@ -71,4 +87,8 @@ const ULyraInventoryItemFragment* ULyraInventoryItemInstance::FindFragmentByClas
 	return nullptr;
 }
 
-
+ULyraInventoryItemFragment* ULyraInventoryItemInstance::FindFragmentByClass(
+	TSubclassOf<ULyraInventoryItemFragment> FragmentClass)
+{
+	return const_cast<ULyraInventoryItemFragment*>(FindFragmentByClassConst(FragmentClass));
+}

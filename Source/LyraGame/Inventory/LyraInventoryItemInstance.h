@@ -25,6 +25,15 @@ class ULyraInventoryItemInstance : public UObject
 public:
 	ULyraInventoryItemInstance(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
+	UFUNCTION(BlueprintCallable, Category=Inventory)
+	bool IsEmpty() const;
+
+	UFUNCTION(BlueprintCallable, Category=Inventory)
+	int32 GetStackCount() const;
+
+	UFUNCTION(BlueprintCallable, Category=Inventory)
+	bool IsStackable() const;
+	
 	//~UObject interface
 	virtual bool IsSupportedForNetworking() const override { return true; }
 	//~End of UObject interface
@@ -51,12 +60,21 @@ public:
 	}
 
 	UFUNCTION(BlueprintCallable, BlueprintPure=false, meta=(DeterminesOutputType=FragmentClass))
-	const ULyraInventoryItemFragment* FindFragmentByClass(TSubclassOf<ULyraInventoryItemFragment> FragmentClass) const;
+	const ULyraInventoryItemFragment* FindFragmentByClassConst(TSubclassOf<ULyraInventoryItemFragment> FragmentClass) const;
 
 	template <typename ResultClass>
 	const ResultClass* FindFragmentByClass() const
 	{
-		return (ResultClass*)FindFragmentByClass(ResultClass::StaticClass());
+		return (ResultClass*)this->FindFragmentByClass(ResultClass::StaticClass());
+	}
+
+	UFUNCTION(BlueprintCallable, BlueprintPure=false, meta=(DeterminesOutputType=FragmentClass))
+	ULyraInventoryItemFragment* FindFragmentByClass(TSubclassOf<ULyraInventoryItemFragment> FragmentClass);
+
+	template <typename ResultClass>
+	ResultClass* FindFragmentByClass()
+	{
+		return (ResultClass*)this->FindFragmentByClass(ResultClass::StaticClass());
 	}
 
 private:
@@ -69,6 +87,9 @@ private:
 
 	friend struct FLyraInventoryList;
 
+public:
+	int32 LastStackCount;
+
 private:
 	UPROPERTY(Replicated)
 	FGameplayTagStackContainer StatTags;
@@ -76,4 +97,10 @@ private:
 	// The item definition
 	UPROPERTY(Replicated)
 	TSubclassOf<ULyraInventoryItemDefinition> ItemDef;
+
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess))
+	int32 ItemCount;
+	
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
+	int32 Index;
 };

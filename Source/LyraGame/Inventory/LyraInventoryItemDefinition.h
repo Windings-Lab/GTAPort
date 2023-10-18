@@ -42,6 +42,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Display, Instanced)
 	TArray<TObjectPtr<ULyraInventoryItemFragment>> Fragments;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Display)
+	bool bStackable;
+
 public:
 	const ULyraInventoryItemFragment* FindFragmentByClass(TSubclassOf<ULyraInventoryItemFragment> FragmentClass) const;
 };
