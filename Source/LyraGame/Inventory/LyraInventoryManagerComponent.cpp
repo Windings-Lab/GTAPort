@@ -2,6 +2,7 @@
 
 #include "LyraInventoryManagerComponent.h"
 
+#include "LyraGameplayTags.h"
 #include "Engine/ActorChannel.h"
 #include "Engine/World.h"
 #include "GameFramework/GameplayMessageSubsystem.h"
@@ -14,9 +15,6 @@
 
 class FLifetimeProperty;
 struct FReplicationFlags;
-
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Inventory_Message_StackChanged, "Lyra.Inventory.Message.StackChanged");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_Inventory_Message_SlotSwapped, "Lyra.Inventory.Message.SlotSwapped");
 
 //////////////////////////////////////////////////////////////////////
 // FLyraInventoryEntry
@@ -92,16 +90,15 @@ void FLyraInventoryList::BroadcastChangeMessage(FLyraInventoryEntry& Entry, int3
 	Message.DeltaCount = NewCount - OldCount;
 
 	UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(OwnerComponent->GetWorld());
-	MessageSystem.BroadcastMessage(TAG_Lyra_Inventory_Message_StackChanged, Message);
+	MessageSystem.BroadcastMessage(LyraGameplayTags::TAG_Lyra_Inventory_Message_StackChanged, Message);
 }
 
 void FLyraInventoryList::AddEmptyEntry()
 {
 	check(OwnerComponent);
-	AActor* OwningActor = OwnerComponent->GetOwner();
-	check(OwningActor->HasAuthority());
+	check(OwnerComponent->GetOwner()->HasAuthority());
 	FLyraInventoryEntry& NewEntry = Entries.AddDefaulted_GetRef();
-	NewEntry.Instance = NewObject<ULyraInventoryItemInstance>(OwningActor);
+	NewEntry.Instance = NewObject<ULyraInventoryItemInstance>(OwnerComponent);
 	MarkItemDirty(NewEntry);
 }
 
@@ -140,9 +137,8 @@ ULyraInventoryItemInstance* FLyraInventoryList::ChangeEntry(TSubclassOf<ULyraInv
 			else
 			{
 				check(OwnerComponent);
-				AActor* OwningActor = OwnerComponent->GetOwner();
-				check(OwningActor->HasAuthority());
-				Entry.Instance = NewObject<ULyraInventoryItemInstance>(OwningActor);  //@TODO: Using the actor instead of component as the outer due to UE-127172
+				check(OwnerComponent->GetOwner()->HasAuthority());
+				Entry.Instance = NewObject<ULyraInventoryItemInstance>(OwnerComponent);
 				Entry.Instance->SetItemDef(ItemDef);
 				for (ULyraInventoryItemFragment* Fragment : GetDefault<ULyraInventoryItemDefinition>(ItemDef)->Fragments)
 				{
@@ -292,13 +288,16 @@ ULyraInventoryItemInstance* ULyraInventoryManagerComponent::ChangeInventorySlot(
 	return Result;
 }
 
-void ULyraInventoryManagerComponent::TransferSlots(int32 SourceIndex, int32 DestIndex)
+bool ULyraInventoryManagerComponent::TransferSlots_Implementation(UObject* WorldContextObject, FTransferInventoryData Data)
 {
-	if(SourceIndex == DestIndex) return;
-	InventoryList.Entries.Swap(SourceIndex, DestIndex);
+	if(Data.SourceIndex == Data.DestIndex && Data.SourceInventory == this) return false;
+	return ITransferableInventory::TransferSlots_Implementation(WorldContextObject, Data);
+}
 
-	UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(GetWorld());
-	MessageSystem.BroadcastMessage(TAG_Lyra_Inventory_Message_SlotSwapped, FLyraInventoryChangeMessage());
+void ULyraInventoryManagerComponent::SetItemAtIndex_Implementation(ULyraInventoryItemInstance* Item, int32 Index)
+{
+	ITransferableInventory::SetItemAtIndex_Implementation(Item, Index);
+	InventoryList.Entries[Index].Instance = Item;
 }
 
 void ULyraInventoryManagerComponent::AddEmptySlots(int32 Size)

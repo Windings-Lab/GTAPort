@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "TransferableInventory.h"
 #include "Components/ActorComponent.h"
 #include "Net/Serialization/FastArraySerializer.h"
 
@@ -141,7 +142,7 @@ struct TStructOpsTypeTraits<FLyraInventoryList> : public TStructOpsTypeTraitsBas
  * Manages an inventory
  */
 UCLASS(BlueprintType)
-class LYRAGAME_API ULyraInventoryManagerComponent : public UActorComponent
+class LYRAGAME_API ULyraInventoryManagerComponent : public UActorComponent, public ITransferableInventory
 {
 	GENERATED_BODY()
 
@@ -154,8 +155,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category=Inventory)
 	ULyraInventoryItemInstance* ChangeInventorySlot(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 StackCount = 1);
 
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category=Inventory)
-	void TransferSlots(int32 SourceIndex, int32 DestIndex);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
+	bool TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
+	void SetItemAtIndex(ULyraInventoryItemInstance* Item, int32 Index);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category=Inventory)
 	void AddEmptySlots(int32 Size);

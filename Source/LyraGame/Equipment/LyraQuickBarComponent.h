@@ -4,6 +4,7 @@
 
 #include "Components/ControllerComponent.h"
 #include "Inventory/LyraInventoryItemInstance.h"
+#include "Inventory/TransferableInventory.h"
 
 #include "LyraQuickBarComponent.generated.h"
 
@@ -14,12 +15,18 @@ class UObject;
 struct FFrame;
 
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
-class LYRAGAME_API ULyraQuickBarComponent : public UControllerComponent
+class LYRAGAME_API ULyraQuickBarComponent : public UControllerComponent, public ITransferableInventory
 {
 	GENERATED_BODY()
 
 public:
 	ULyraQuickBarComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
+	bool TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
+	void SetItemAtIndex(ULyraInventoryItemInstance* Item, int32 Index);
 
 	UFUNCTION(BlueprintCallable, Category="Lyra")
 	void CycleActiveSlotForward();
@@ -61,7 +68,7 @@ private:
 
 protected:
 	UPROPERTY()
-	int32 NumSlots = 3;
+	int32 NumSlots = 4;
 
 	UFUNCTION()
 	void OnRep_Slots();

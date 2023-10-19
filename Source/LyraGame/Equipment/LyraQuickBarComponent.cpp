@@ -2,6 +2,7 @@
 
 #include "LyraQuickBarComponent.h"
 
+#include "LyraGameplayTags.h"
 #include "Equipment/LyraEquipmentDefinition.h"
 #include "Equipment/LyraEquipmentInstance.h"
 #include "Equipment/LyraEquipmentManagerComponent.h"
@@ -9,6 +10,7 @@
 #include "GameFramework/Pawn.h"
 #include "Inventory/InventoryFragment_EquippableItem.h"
 #include "NativeGameplayTags.h"
+#include "Inventory/LyraInventoryManagerComponent.h"
 #include "Net/UnrealNetwork.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraQuickBarComponent)
@@ -25,6 +27,32 @@ ULyraQuickBarComponent::ULyraQuickBarComponent(const FObjectInitializer& ObjectI
 	SetIsReplicatedByDefault(true);
 }
 
+bool ULyraQuickBarComponent::TransferSlots_Implementation(UObject* WorldContextObject, FTransferInventoryData Data)
+{
+	if(Data.SourceIndex == Data.DestIndex && Data.SourceInventory == this) return false;
+	return ITransferableInventory::TransferSlots_Implementation(WorldContextObject, Data);
+}
+
+void ULyraQuickBarComponent::SetItemAtIndex_Implementation(ULyraInventoryItemInstance* Item, int32 Index)
+{
+	ITransferableInventory::SetItemAtIndex_Implementation(Item, Index);
+	bool bNewItem = Slots[0]->GetItemDef() != Item->GetItemDef() && Index == 0;
+	Slots[Index] = Item;
+	if(!Slots[0]->IsEmpty())
+	{
+		if(bNewItem)
+		{
+			ActiveSlotIndex = -1;
+		}
+		SetActiveSlotIndex(0);
+	}
+	else
+	{
+		UnequipItemInSlot();
+		ActiveSlotIndex = -1;
+	}
+}
+
 void ULyraQuickBarComponent::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -35,9 +63,10 @@ void ULyraQuickBarComponent::GetLifetimeReplicatedProps(TArray< FLifetimePropert
 
 void ULyraQuickBarComponent::BeginPlay()
 {
-	if (Slots.Num() < NumSlots)
+	for(int i = 0; i < NumSlots; i++)
 	{
-		Slots.AddDefaulted(NumSlots - Slots.Num());
+		auto& Slot = Slots.AddDefaulted_GetRef();
+		Slot = NewObject<ULyraInventoryItemInstance>(this);
 	}
 
 	Super::BeginPlay();

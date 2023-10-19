@@ -65,18 +65,10 @@ void AGTACharacter::AddInitialInventory()
 	Inventory->AddEmptySlots(14);
 	for(int slotIndex = 0; slotIndex < InitialInventoryItems.Num(); slotIndex++)
 	{
-		auto* ItemInstance = Inventory->ChangeInventorySlot(InitialInventoryItems[slotIndex], 1);
-		QuickBar->AddItemToSlot(slotIndex, ItemInstance);
+		Inventory->ChangeInventorySlot(InitialInventoryItems[slotIndex], 1);
 	}
 
-	if(!QuickBar->GetSlots().IsEmpty() && QuickBar->GetSlots()[0])
-	{
-		QuickBar->SetActiveSlotIndex(0);
-	}
-	else
-	{
-		OnInitialUnarmed();
-	}
+	OnInitialUnarmed();
 }
 
 void AGTACharacter::OnAbilitySystemInitialized()
