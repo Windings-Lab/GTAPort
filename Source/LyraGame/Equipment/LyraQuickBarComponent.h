@@ -14,6 +14,15 @@ class ULyraEquipmentManagerComponent;
 class UObject;
 struct FFrame;
 
+USTRUCT(BlueprintType)
+struct FActiveSlotChangedMessage
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 NewActiveSlotIndex;
+};
+
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
 class LYRAGAME_API ULyraQuickBarComponent : public UControllerComponent, public ITransferableInventory
 {

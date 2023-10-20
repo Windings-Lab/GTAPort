@@ -68,6 +68,7 @@ void AGTACharacter::AddInitialInventory()
 		Inventory->ChangeInventorySlot(InitialInventoryItems[slotIndex], 1);
 	}
 
+	QuickBar->SetActiveSlotIndex(0);
 	OnInitialUnarmed();
 }
 

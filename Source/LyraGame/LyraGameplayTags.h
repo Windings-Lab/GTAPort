@@ -21,6 +21,7 @@ namespace LyraGameplayTags
 
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Lyra_Inventory_Message_StackChanged);
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Lyra_Inventory_Message_SlotSwapped);
+	LYRAGAME_API    UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Lyra_Inventory_Message_ActiveSlotChanged);
 
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Native_Move);
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Native_Look_Mouse);

@@ -36,17 +36,17 @@ bool ULyraQuickBarComponent::TransferSlots_Implementation(UObject* WorldContextO
 void ULyraQuickBarComponent::SetItemAtIndex_Implementation(ULyraInventoryItemInstance* Item, int32 Index)
 {
 	ITransferableInventory::SetItemAtIndex_Implementation(Item, Index);
-	bool bNewItem = Slots[0]->GetItemDef() != Item->GetItemDef() && Index == 0;
+	const auto ActiveSlot = Slots[ActiveSlotIndex];
+	const bool bNewActiveItem	= Index == ActiveSlotIndex && ActiveSlot->GetItemDef() != Item->GetItemDef();
+	const bool bEmptyActiveItem = Index == ActiveSlotIndex && !ActiveSlot->IsEmpty() && Item->IsEmpty();
+	
 	Slots[Index] = Item;
-	if(!Slots[0]->IsEmpty())
+	if(bNewActiveItem)
 	{
-		if(bNewItem)
-		{
-			ActiveSlotIndex = -1;
-		}
-		SetActiveSlotIndex(0);
+		ActiveSlotIndex = -1;
+		SetActiveSlotIndex(Index);
 	}
-	else
+	else if(bEmptyActiveItem)
 	{
 		UnequipItemInSlot();
 		ActiveSlotIndex = -1;
@@ -172,6 +172,9 @@ void ULyraQuickBarComponent::SetActiveSlotIndex_Implementation(int32 NewIndex)
 		EquipItemInSlot();
 
 		OnRep_ActiveSlotIndex();
+
+		UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(GetWorld());
+		MessageSystem.BroadcastMessage(LyraGameplayTags::TAG_Lyra_Inventory_Message_ActiveSlotChanged, FActiveSlotChangedMessage(ActiveSlotIndex));
 	}
 }
 
