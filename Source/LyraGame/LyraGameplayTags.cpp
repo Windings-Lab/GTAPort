@@ -17,9 +17,8 @@ namespace LyraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_ActivateFail_ActivationGroup, "Ability.ActivateFail.ActivationGroup", "Ability failed to activate because of its activation group.");
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Behavior_SurvivesDeath, "Ability.Behavior.SurvivesDeath", "An ability with this type tag should not be canceled due to death.");
-
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(TAG_Lyra_Inventory_Message_StackChanged, "Lyra.Inventory.Message.StackChanged", "Message called when item count changed");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(TAG_Lyra_Inventory_Message_SlotSwapped, "Lyra.Inventory.Message.SlotSwapped", "Message called when inventory slot swapped");
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(TAG_Lyra_Inventory_Message_SlotChanged, "Lyra.Inventory.Message.SlotChanged", "Message called when inventory slot changed");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(TAG_Lyra_Inventory_Message_ActiveSlotChanged, "Lyra.Inventory.Message.ActiveSlotChanged", "Message called when inventory active slot changed");
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Native_Move, "InputTag.Native.Move", "Move input.");

@@ -18,9 +18,8 @@ namespace LyraGameplayTags
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_ActivateFail_ActivationGroup);
 
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Behavior_SurvivesDeath);
-
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Lyra_Inventory_Message_StackChanged);
-	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Lyra_Inventory_Message_SlotSwapped);
+	
+	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Lyra_Inventory_Message_SlotChanged);
 	LYRAGAME_API    UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Lyra_Inventory_Message_ActiveSlotChanged);
 
 	LYRAGAME_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Native_Move);

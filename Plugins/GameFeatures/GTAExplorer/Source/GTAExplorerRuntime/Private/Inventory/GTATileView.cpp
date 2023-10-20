@@ -3,7 +3,23 @@
 
 #include "Inventory/GTATileView.h"
 
-UUserWidget* UGTATileView::GetWidgetFromItem(const UObject* Item)
+void UGTATileView::SetEntryWidget(TSubclassOf<UUserWidget> WidgetClass)
 {
-	return GetEntryWidgetFromItem(Item);
+	EntryWidgetClass = WidgetClass;
+}
+
+void UGTATileView::SetHorizontalSpacing(float Value)
+{
+	InitHorizontalEntrySpacing(Value);
+}
+
+void UGTATileView::SetVerticalSpacing(float Value)
+{
+	InitVerticalEntrySpacing(Value);
+}
+
+void UGTATileView::PostLoad()
+{
+	EntrySpacing = 0.f;
+	Super::PostLoad();
 }

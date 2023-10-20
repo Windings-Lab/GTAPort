@@ -2,17 +2,31 @@
 
 #pragma once
 
-#include "System/GameplayTagStack.h"
 #include "Templates/SubclassOf.h"
 
 #include "LyraInventoryItemInstance.generated.h"
 
+class ULyraInventoryItemInstanceData;
+class ULyraInventoryItemInstance;
 class FLifetimeProperty;
 
 class ULyraInventoryItemDefinition;
 class ULyraInventoryItemFragment;
 struct FFrame;
 struct FGameplayTag;
+
+USTRUCT(BlueprintType)
+struct FSlotChangedMessage
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 Index = -1;
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<ULyraInventoryItemInstance> Item = nullptr;
+	UPROPERTY(BlueprintReadWrite)
+	int32 DeltaCount = 0;
+};
 
 /**
  * ULyraInventoryItemInstance
@@ -29,10 +43,15 @@ public:
 	bool IsEmpty() const;
 
 	UFUNCTION(BlueprintCallable, Category=Inventory)
-	int32 GetStackCount() const;
+	int32 GetItemCount() const;
+
+	void SetItemCount(int32 Value);
 
 	UFUNCTION(BlueprintCallable, Category=Inventory)
 	bool IsStackable() const;
+
+	void CreateNewData(TSubclassOf<ULyraInventoryItemDefinition> InDef, int32 StackCount);
+	void DestroyData();
 	
 	//~UObject interface
 	virtual bool IsSupportedForNetworking() const override { return true; }
@@ -54,10 +73,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category=Inventory)
 	bool HasStatTag(FGameplayTag Tag) const;
 
-	TSubclassOf<ULyraInventoryItemDefinition> GetItemDef() const
-	{
-		return ItemDef;
-	}
+	UFUNCTION(BlueprintCallable, Category=Inventory)
+	TSubclassOf<ULyraInventoryItemDefinition> GetItemDef() const;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure=false, meta=(DeterminesOutputType=FragmentClass))
 	const ULyraInventoryItemFragment* FindFragmentByClassConst(TSubclassOf<ULyraInventoryItemFragment> FragmentClass) const;
@@ -77,6 +94,12 @@ public:
 		return (ResultClass*)this->FindFragmentByClass(ResultClass::StaticClass());
 	}
 
+	void Swap(ULyraInventoryItemInstance* Other);
+
+	void BroadcastAddMessage();
+	void BroadcastDeleteMessage();
+	void BroadcastChangeMessage();
+
 private:
 #if UE_WITH_IRIS
 	/** Register all replication fragments */
@@ -84,23 +107,14 @@ private:
 #endif // UE_WITH_IRIS
 
 	void SetItemDef(TSubclassOf<ULyraInventoryItemDefinition> InDef);
-
-	friend struct FLyraInventoryList;
-
-public:
-	int32 LastStackCount;
-
+	
 private:
 	UPROPERTY(Replicated)
-	FGameplayTagStackContainer StatTags;
-
-	// The item definition
-	UPROPERTY(Replicated)
-	TSubclassOf<ULyraInventoryItemDefinition> ItemDef;
-
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess))
-	int32 ItemCount;
+	TObjectPtr<ULyraInventoryItemInstanceData> Data = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
-	int32 Index;
+	int32 Index = -1;
+
+	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
+	TObjectPtr<UUserWidget> AttachedWidget = nullptr;
 };

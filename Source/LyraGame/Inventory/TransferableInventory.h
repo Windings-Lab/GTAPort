@@ -6,6 +6,7 @@
 #include "UObject/Interface.h"
 #include "TransferableInventory.generated.h"
 
+struct FSlotChangedMessage;
 class ULyraInventoryItemInstance;
 
 USTRUCT(BlueprintType)
@@ -14,22 +15,16 @@ struct FTransferInventoryData
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite)
-	int32 SourceIndex;
+	int32 SourceIndex = -1;
 	UPROPERTY(BlueprintReadWrite)
-	TObjectPtr<ULyraInventoryItemInstance> SourceItem;
+	TObjectPtr<ULyraInventoryItemInstance> SourceItem = nullptr;
 	UPROPERTY(BlueprintReadWrite)
-	TObjectPtr<UObject> SourceInventory;
+	TObjectPtr<UObject> SourceInventory = nullptr;
 
 	UPROPERTY(BlueprintReadWrite)
-	int32 DestIndex;
+	int32 DestIndex = -1;
 	UPROPERTY(BlueprintReadWrite)
-	TObjectPtr<ULyraInventoryItemInstance> DestItem;
-};
-
-USTRUCT(BlueprintType)
-struct FTransferInventoryMessage
-{
-	GENERATED_BODY()
+	TObjectPtr<ULyraInventoryItemInstance> DestItem = nullptr;
 };
 
 
@@ -50,10 +45,18 @@ class LYRAGAME_API ITransferableInventory
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	bool TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
-	virtual bool TransferSlots_Implementation(UObject* WorldContextObject, FTransferInventoryData Data);
+	void TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
+	virtual void TransferSlots_Implementation(UObject* WorldContextObject, FTransferInventoryData Data);
 
-	UFUNCTION(BlueprintNativeEvent)
-	void SetItemAtIndex(ULyraInventoryItemInstance* Item, int32 Index);
-	virtual void SetItemAtIndex_Implementation(ULyraInventoryItemInstance* Item, int32 Index);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void OnTransferSlotsFinished(const UWorld* World, FSlotChangedMessage Message);
+	virtual void OnTransferSlotsFinished_Implementation(const UWorld* World, FSlotChangedMessage Message);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	TArray<ULyraInventoryItemInstance*> GetAllItems();
+	virtual TArray<ULyraInventoryItemInstance*> GetAllItems_Implementation();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void DeleteFromIndex(int32 Index);
+	virtual void DeleteFromIndex_Implementation(int32 Index);
 };

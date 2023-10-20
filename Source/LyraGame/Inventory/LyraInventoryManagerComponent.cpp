@@ -2,13 +2,10 @@
 
 #include "LyraInventoryManagerComponent.h"
 
-#include "LyraGameplayTags.h"
 #include "Engine/ActorChannel.h"
 #include "Engine/World.h"
-#include "GameFramework/GameplayMessageSubsystem.h"
 #include "LyraInventoryItemDefinition.h"
 #include "LyraInventoryItemInstance.h"
-#include "NativeGameplayTags.h"
 #include "Net/UnrealNetwork.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraInventoryManagerComponent)
@@ -26,7 +23,7 @@ FString FLyraInventoryEntry::GetDebugString() const
 	if (Instance && !Instance->IsEmpty())
 	{
 		ItemDef = Instance->GetItemDef();
-		StackCount = Instance->GetStackCount();
+		StackCount = Instance->GetItemCount();
 	}
 
 	return FString::Printf(TEXT("%s (%d x %s)"), *GetNameSafe(Instance), StackCount, *GetNameSafe(ItemDef));
@@ -37,60 +34,17 @@ FString FLyraInventoryEntry::GetDebugString() const
 
 void FLyraInventoryList::PreReplicatedRemove(const TArrayView<int32> RemovedIndices, int32 FinalSize)
 {
-	for (int32 Index : RemovedIndices)
-	{
-		FLyraInventoryEntry& Entry = Entries[Index];
-		if(Entry.Instance->IsStackable())
-		{
-			BroadcastChangeMessage(Entry, /*OldCount=*/ Entry.Instance->LastStackCount, /*NewCount=*/ 0);
-			Entry.Instance->LastStackCount = Entry.Instance->GetStackCount();
-		}
-		else
-		{
-			BroadcastChangeMessage(Entry, /*OldCount=*/ 1, /*NewCount=*/ 0);
-		}
-	}
+
 }
 
 void FLyraInventoryList::PostReplicatedAdd(const TArrayView<int32> AddedIndices, int32 FinalSize)
 {
-	for (int32 Index : AddedIndices)
-	{
-		FLyraInventoryEntry& Entry = Entries[Index];
-		if(Entry.Instance->IsStackable())
-		{
-			BroadcastChangeMessage(Entry, /*OldCount=*/ Entry.Instance->LastStackCount, /*NewCount=*/ Entry.Instance->GetStackCount());
-			Entry.Instance->LastStackCount = Entry.Instance->GetStackCount();
-		}
-		else
-		{
-			BroadcastChangeMessage(Entry, /*OldCount=*/ 0, /*NewCount=*/ 1);
-		}
-	}
+
 }
 
 void FLyraInventoryList::PostReplicatedChange(const TArrayView<int32> ChangedIndices, int32 FinalSize)
 {
-	for (int32 Index : ChangedIndices)
-	{
-		FLyraInventoryEntry& Entry = Entries[Index];
-		check(Entry.Instance->IsStackable());
-		BroadcastChangeMessage(Entry, /*OldCount=*/ Entry.Instance->LastStackCount, /*NewCount=*/ Entry.Instance->GetStackCount());
-		Entry.Instance->LastStackCount = Entry.Instance->GetStackCount();
-	}
-}
 
-void FLyraInventoryList::BroadcastChangeMessage(FLyraInventoryEntry& Entry, int32 OldCount, int32 NewCount)
-{
-	FLyraInventoryChangeMessage Message;
-	Message.InventoryOwner = OwnerComponent;
-	Message.Instance = Entry.Instance;
-	Message.LastEntryOperation = LastEntryOperation;
-	Message.NewCount = NewCount;
-	Message.DeltaCount = NewCount - OldCount;
-
-	UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(OwnerComponent->GetWorld());
-	MessageSystem.BroadcastMessage(LyraGameplayTags::TAG_Lyra_Inventory_Message_StackChanged, Message);
 }
 
 void FLyraInventoryList::AddEmptyEntry()
@@ -110,99 +64,85 @@ void FLyraInventoryList::AddEmptyEntries(int32 Size)
 	}
 }
 
-ULyraInventoryItemInstance* FLyraInventoryList::ChangeEntry(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 StackCount, EEntryOperation& Op)
+ULyraInventoryItemInstance* FLyraInventoryList::ChangeEntry(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 StackCount)
 {
+	if(StackCount == 0) return nullptr;
 	check(ItemDef != nullptr)
-	ULyraInventoryItemInstance* Result = nullptr;
-
-	TTuple<int32, int32> Index = FindDefAndEmptyIndex(ItemDef);
-	const bool bStackable = ItemDef.GetDefaultObject()->bStackable;
-	const int32 EntryIndex = bStackable ? Index.Get<0>() : Index.Get<1>();
 	
-	if(EntryIndex < 0)
+	const int32 Index = FindIndex(ItemDef, StackCount);
+	if(Index < 0)
 	{
-		LastEntryOperation = None;
+		return nullptr;
 	}
-	else
+	
+	FLyraInventoryEntry& Entry = Entries[Index];
+	const auto Instance = Entry.Instance;
+	auto Result = Entry.Instance;
+	TArray Indices = {Index};
+	
+	if(Instance->IsEmpty())
 	{
-		FLyraInventoryEntry& Entry = Entries[EntryIndex];
-		TArray Indices = {EntryIndex};
-		
-		if(Entry.Instance->IsEmpty())
+		if(StackCount <= 0)
 		{
-			if (StackCount <= 0)
+			Result = nullptr;
+		}
+		else
+		{
+			Instance->CreateNewData(ItemDef, StackCount);
+			Result = Instance;
+		}
+	}
+	else if(Instance->GetItemDef() == ItemDef)
+	{
+		Instance->SetItemCount(Instance->GetItemCount() + StackCount);
+		if(Instance->IsStackable())
+		{
+			check(Instance->GetItemCount() >= 0);
+			if(Instance->GetItemCount() == 0)
 			{
-				LastEntryOperation = None;
+				Instance->DestroyData();
 			}
 			else
 			{
-				check(OwnerComponent);
-				check(OwnerComponent->GetOwner()->HasAuthority());
-				Entry.Instance = NewObject<ULyraInventoryItemInstance>(OwnerComponent);
-				Entry.Instance->SetItemDef(ItemDef);
-				for (ULyraInventoryItemFragment* Fragment : GetDefault<ULyraInventoryItemDefinition>(ItemDef)->Fragments)
-				{
-					if (!Fragment) continue;
-					Fragment->OnInstanceCreated(Entry.Instance);
-				} // End of loop
-
-				if(bStackable)
-				{
-					Entry.Instance->ItemCount += StackCount;
-				}
-			
-				LastEntryOperation = Added;
-				Result = Entry.Instance;
-
-				PostReplicatedAdd(Indices, 0);
+				Instance->BroadcastChangeMessage();
 			}
 		}
-		// If it's not empty slot
-		else if(Entry.Instance->GetItemDef() == ItemDef)
+		else
 		{
-			if(bStackable)
+			// TODO: Implement multiple deletion/insertion
+			if(StackCount < 0)
 			{
-				Entry.Instance->ItemCount += StackCount;
-				// Remove
-				if(Entry.Instance->GetStackCount() <= 0)
-				{
-					LastEntryOperation = Removed;
-					PreReplicatedRemove(Indices, 0);
-					Result = Entry.Instance;
-					Entry.Instance = nullptr;
-				}
-				// Stack count changed
-				else
-				{
-					LastEntryOperation = Changed;
-					PostReplicatedChange(Indices, 0);
-				}
+				check(Instance->GetItemCount() >= 0);
+				Instance->DestroyData();
 			}
-			// Remove
-			else if(StackCount < 0)
+			if(StackCount > 1)
 			{
-				LastEntryOperation = Removed;
-				PreReplicatedRemove(Indices, 0);
-				Result = Entry.Instance;
-				Entry.Instance = nullptr;
-			}
-			// TODO: Add as much stack count as possible to empty slots
-			else if(StackCount > 0)
-			{
+				
 			}
 		}
-		
-		MarkItemDirty(Entry);
 	}
 
-	Op = LastEntryOperation;
+	if(Result) MarkItemDirty(Entry);
+	
 	return Result;
 }
 
-TTuple<int32, int32> FLyraInventoryList::FindDefAndEmptyIndex(TSubclassOf<ULyraInventoryItemDefinition> ItemDef)
+void FLyraInventoryList::DeleteFromIndex(int32 Index)
+{
+	FLyraInventoryEntry& Entry = Entries[Index];
+	const auto Instance = Entry.Instance;
+	TArray Indices = {Index};
+
+	if(Instance->IsEmpty()) return;
+	Instance->SetItemCount(0);
+	Instance->DestroyData();
+}
+
+int32 FLyraInventoryList::FindIndex(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 StackCount)
 {
 	int32 Index = -1;
 	int32 EmptyEntryIndex = -1;
+	int32 Result = -1;
 	bool bInstanceFound = false;
 	bool bEmptyEntryFound = false;
 	
@@ -225,8 +165,17 @@ TTuple<int32, int32> FLyraInventoryList::FindDefAndEmptyIndex(TSubclassOf<ULyraI
 	}
 
 	Index = bInstanceFound ? Index : EmptyEntryIndex;
+	
+	if(ItemDef.GetDefaultObject()->bStackable)
+	{
+		Result = Index;
+	}
+	else
+	{
+		Result = StackCount > 0 ? EmptyEntryIndex : Index;
+	}
 
-	return MakeTuple(Index, EmptyEntryIndex);
+	return Result;
 }
 
 TArray<ULyraInventoryItemInstance*> FLyraInventoryList::GetAllItems() const
@@ -266,48 +215,38 @@ bool ULyraInventoryManagerComponent::CanAddItemDefinition(TSubclassOf<ULyraInven
 
 ULyraInventoryItemInstance* ULyraInventoryManagerComponent::ChangeInventorySlot(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 StackCount)
 {
-	EEntryOperation Op = None;
-	ULyraInventoryItemInstance* Result = InventoryList.ChangeEntry(ItemDef, StackCount, Op);
-	if (IsUsingRegisteredSubObjectList() && IsReadyForReplication() && Result)
-	{
-		switch (Op)
-		{
-		case None:
-			break;
-		case Changed:
-			break;
-		case Added:
-			AddReplicatedSubObject(Result);
-			break;
-		case Removed:
-			RemoveReplicatedSubObject(Result);
-			break;
-		default: ;
-		}
-	}
+	ULyraInventoryItemInstance* Result = InventoryList.ChangeEntry(ItemDef, StackCount);
 	return Result;
 }
 
-bool ULyraInventoryManagerComponent::TransferSlots_Implementation(UObject* WorldContextObject, FTransferInventoryData Data)
+void ULyraInventoryManagerComponent::TransferSlots_Implementation(UObject* WorldContextObject, FTransferInventoryData Data)
 {
-	if(Data.SourceIndex == Data.DestIndex && Data.SourceInventory == this) return false;
-	return ITransferableInventory::TransferSlots_Implementation(WorldContextObject, Data);
+	if(Data.SourceIndex == Data.DestIndex && Data.SourceInventory == this) return;
+	ITransferableInventory::TransferSlots_Implementation(WorldContextObject, Data);
 }
 
-void ULyraInventoryManagerComponent::SetItemAtIndex_Implementation(ULyraInventoryItemInstance* Item, int32 Index)
+void ULyraInventoryManagerComponent::OnTransferSlotsFinished_Implementation(const UWorld* World, FSlotChangedMessage Message)
 {
-	ITransferableInventory::SetItemAtIndex_Implementation(Item, Index);
-	InventoryList.Entries[Index].Instance = Item;
+	ITransferableInventory::OnTransferSlotsFinished_Implementation(World, Message);
+}
+
+TArray<ULyraInventoryItemInstance*> ULyraInventoryManagerComponent::GetAllItems_Implementation()
+{
+	return InventoryList.GetAllItems();
+}
+
+void ULyraInventoryManagerComponent::DeleteFromIndex_Implementation(int32 Index)
+{
+	InventoryList.DeleteFromIndex(Index);
 }
 
 void ULyraInventoryManagerComponent::AddEmptySlots(int32 Size)
 {
 	InventoryList.AddEmptyEntries(Size);
-}
-
-TArray<ULyraInventoryItemInstance*> ULyraInventoryManagerComponent::GetAllItems() const
-{
-	return InventoryList.GetAllItems();
+	for (auto& Entry : InventoryList.Entries)
+	{
+		AddReplicatedSubObject(Entry.Instance);
+	}
 }
 
 ULyraInventoryItemInstance* ULyraInventoryManagerComponent::FindFirstItemStackByDefinition(TSubclassOf<ULyraInventoryItemDefinition> ItemDef) const

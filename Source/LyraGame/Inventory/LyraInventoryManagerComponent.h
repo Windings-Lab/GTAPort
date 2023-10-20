@@ -17,38 +17,6 @@ struct FLyraInventoryList;
 struct FNetDeltaSerializeInfo;
 struct FReplicationFlags;
 
-UENUM(BlueprintType)
-enum EEntryOperation
-{
-	None,
-	Changed,
-	Added,
-	Removed
-};
-
-/** A message when an item is added to the inventory */
-USTRUCT(BlueprintType)
-struct FLyraInventoryChangeMessage
-{
-	GENERATED_BODY()
-
-	//@TODO: Tag based names+owning actors for inventories instead of directly exposing the component?
-	UPROPERTY(BlueprintReadOnly, Category=Inventory)
-	TObjectPtr<UActorComponent> InventoryOwner = nullptr;
-
-	UPROPERTY(BlueprintReadOnly, Category = Inventory)
-	TObjectPtr<ULyraInventoryItemInstance> Instance = nullptr;
-
-	UPROPERTY(BlueprintReadOnly, Category=Inventory)
-	TEnumAsByte<EEntryOperation> LastEntryOperation = None;
-
-	UPROPERTY(BlueprintReadOnly, Category=Inventory)
-	int32 NewCount = 0;
-
-	UPROPERTY(BlueprintReadOnly, Category=Inventory)
-	int32 DeltaCount = 0;
-};
-
 /** A single entry in an inventory */
 USTRUCT(BlueprintType)
 struct FLyraInventoryEntry : public FFastArraySerializerItem
@@ -101,12 +69,10 @@ public:
 
 	void AddEmptyEntry();
 	void AddEmptyEntries(int32 Size);
-	ULyraInventoryItemInstance* ChangeEntry(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 StackCount, EEntryOperation& Op);
+	ULyraInventoryItemInstance* ChangeEntry(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 StackCount);
+	void DeleteFromIndex(int32 Index);
 
-	TTuple<int32, int32> FindDefAndEmptyIndex(TSubclassOf<ULyraInventoryItemDefinition> ItemDef);
-
-private:
-	void BroadcastChangeMessage(FLyraInventoryEntry& Entry, int32 OldCount, int32 NewCount);
+	int32 FindIndex(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 StackCount);
 
 private:
 	friend ULyraInventoryManagerComponent;
@@ -118,9 +84,6 @@ private:
 
 	UPROPERTY(NotReplicated)
 	TObjectPtr<UActorComponent> OwnerComponent;
-
-	UPROPERTY(NotReplicated)
-	TEnumAsByte<EEntryOperation> LastEntryOperation = None;
 };
 
 template<>
@@ -156,16 +119,19 @@ public:
 	ULyraInventoryItemInstance* ChangeInventorySlot(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 StackCount = 1);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
-	bool TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
+	void TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void OnTransferSlotsFinished(const UWorld* World, FSlotChangedMessage Message);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
-	void SetItemAtIndex(ULyraInventoryItemInstance* Item, int32 Index);
+	TArray<ULyraInventoryItemInstance*> GetAllItems();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
+	void DeleteFromIndex(int32 Index);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category=Inventory)
 	void AddEmptySlots(int32 Size);
-
-	UFUNCTION(BlueprintCallable, Category=Inventory, BlueprintPure=false)
-	TArray<ULyraInventoryItemInstance*> GetAllItems() const;
 
 	UFUNCTION(BlueprintCallable, Category=Inventory, BlueprintPure)
 	ULyraInventoryItemInstance* FindFirstItemStackByDefinition(TSubclassOf<ULyraInventoryItemDefinition> ItemDef) const;

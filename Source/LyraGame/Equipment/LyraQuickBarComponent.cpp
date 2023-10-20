@@ -27,30 +27,36 @@ ULyraQuickBarComponent::ULyraQuickBarComponent(const FObjectInitializer& ObjectI
 	SetIsReplicatedByDefault(true);
 }
 
-bool ULyraQuickBarComponent::TransferSlots_Implementation(UObject* WorldContextObject, FTransferInventoryData Data)
+void ULyraQuickBarComponent::TransferSlots_Implementation(UObject* WorldContextObject, FTransferInventoryData Data)
 {
-	if(Data.SourceIndex == Data.DestIndex && Data.SourceInventory == this) return false;
-	return ITransferableInventory::TransferSlots_Implementation(WorldContextObject, Data);
+	if(Data.SourceIndex == Data.DestIndex && Data.SourceInventory == this) return;
+	ITransferableInventory::TransferSlots_Implementation(WorldContextObject, Data);
 }
 
-void ULyraQuickBarComponent::SetItemAtIndex_Implementation(ULyraInventoryItemInstance* Item, int32 Index)
+void ULyraQuickBarComponent::OnTransferSlotsFinished_Implementation(const UWorld* World, FSlotChangedMessage Message)
 {
-	ITransferableInventory::SetItemAtIndex_Implementation(Item, Index);
-	const auto ActiveSlot = Slots[ActiveSlotIndex];
-	const bool bNewActiveItem	= Index == ActiveSlotIndex && ActiveSlot->GetItemDef() != Item->GetItemDef();
-	const bool bEmptyActiveItem = Index == ActiveSlotIndex && !ActiveSlot->IsEmpty() && Item->IsEmpty();
-	
-	Slots[Index] = Item;
-	if(bNewActiveItem)
+	if(Message.Index == ActiveSlotIndex)
+	{
+		ActiveSlotIndex = -1;
+		SetActiveSlotIndex(Message.Index);
+	}
+	ITransferableInventory::OnTransferSlotsFinished_Implementation(World, Message);
+}
+
+void ULyraQuickBarComponent::DeleteFromIndex_Implementation(int32 Index)
+{
+	Slots[Index]->SetItemCount(0);
+	Slots[Index]->DestroyData();
+	if(Index == ActiveSlotIndex)
 	{
 		ActiveSlotIndex = -1;
 		SetActiveSlotIndex(Index);
 	}
-	else if(bEmptyActiveItem)
-	{
-		UnequipItemInSlot();
-		ActiveSlotIndex = -1;
-	}
+}
+
+TArray<ULyraInventoryItemInstance*> ULyraQuickBarComponent::GetAllItems_Implementation()
+{
+	return Slots;
 }
 
 void ULyraQuickBarComponent::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const
@@ -71,6 +77,8 @@ void ULyraQuickBarComponent::BeginPlay()
 
 	Super::BeginPlay();
 }
+
+
 
 void ULyraQuickBarComponent::CycleActiveSlotForward()
 {

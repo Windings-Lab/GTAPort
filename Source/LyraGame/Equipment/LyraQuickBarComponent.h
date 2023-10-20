@@ -19,8 +19,8 @@ struct FActiveSlotChangedMessage
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadOnly)
-	int32 NewActiveSlotIndex;
+	UPROPERTY(BlueprintReadWrite)
+	int32 NewActiveSlotIndex = -1;
 };
 
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
@@ -31,11 +31,17 @@ class LYRAGAME_API ULyraQuickBarComponent : public UControllerComponent, public 
 public:
 	ULyraQuickBarComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
-	bool TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
-	void SetItemAtIndex(ULyraInventoryItemInstance* Item, int32 Index);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void OnTransferSlotsFinished(const UWorld* World, FSlotChangedMessage Message);
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void DeleteFromIndex(int32 Index) ;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	TArray<ULyraInventoryItemInstance*> GetAllItems();
 
 	UFUNCTION(BlueprintCallable, Category="Lyra")
 	void CycleActiveSlotForward();
@@ -45,12 +51,6 @@ public:
 
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category="Lyra")
 	void SetActiveSlotIndex(int32 NewIndex);
-
-	UFUNCTION(BlueprintCallable, BlueprintPure=false)
-	TArray<ULyraInventoryItemInstance*> GetSlots() const
-	{
-		return Slots;
-	}
 
 	UFUNCTION(BlueprintCallable, BlueprintPure=false)
 	int32 GetActiveSlotIndex() const { return ActiveSlotIndex; }
