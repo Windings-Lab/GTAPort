@@ -134,8 +134,15 @@ void FLyraInventoryList::DeleteFromIndex(int32 Index)
 	TArray Indices = {Index};
 
 	if(Instance->IsEmpty()) return;
-	Instance->SetItemCount(0);
-	Instance->DestroyData();
+	Instance->SetItemCount(Instance->GetItemCount() - 1);
+	if(Instance->GetItemCount() <= 0)
+	{
+		Instance->DestroyData();
+	}
+	else
+	{
+		Instance->BroadcastChangeMessage();
+	}
 }
 
 int32 FLyraInventoryList::FindIndex(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 StackCount)

@@ -45,9 +45,20 @@ void ULyraQuickBarComponent::OnTransferSlotsFinished_Implementation(const UWorld
 
 void ULyraQuickBarComponent::DeleteFromIndex_Implementation(int32 Index)
 {
-	Slots[Index]->SetItemCount(0);
-	Slots[Index]->DestroyData();
-	if(Index == ActiveSlotIndex)
+	auto Instance = Slots[Index];
+	
+	if(Instance->IsEmpty()) return;
+	Instance->SetItemCount(Instance->GetItemCount() - 1);
+	if(Instance->GetItemCount() <= 0)
+	{
+		Instance->DestroyData();
+	}
+	else
+	{
+		Instance->BroadcastChangeMessage();
+	}
+	
+	if(Index == ActiveSlotIndex && Instance->IsEmpty())
 	{
 		ActiveSlotIndex = -1;
 		SetActiveSlotIndex(Index);
