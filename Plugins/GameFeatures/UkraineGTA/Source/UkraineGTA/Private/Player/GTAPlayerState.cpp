@@ -3,11 +3,8 @@
 
 #include "Player/GTAPlayerState.h"
 
-#include "AbilitySystem/Attributes/GTACombatSet.h"
-
 AGTAPlayerState::AGTAPlayerState(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
-	GTACombatSet = CreateDefaultSubobject<UGTACombatSet>(TEXT("GTACombatSet"));
 }
 
 void AGTAPlayerState::BeginPlay()

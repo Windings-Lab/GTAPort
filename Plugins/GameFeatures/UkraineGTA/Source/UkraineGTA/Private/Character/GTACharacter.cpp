@@ -3,9 +3,6 @@
 
 #include "Character/GTACharacter.h"
 
-#include "GTAGameplayTags.h"
-#include "AbilitySystem/LyraAbilitySystemComponent.h"
-#include "AbilitySystem/Attributes/GTACombatSet.h"
 #include "Character/GTAHeroComponent.h"
 #include "Character/Components/ArmorHandlerComponent.h"
 #include "Character/Components/HungerHandlerComponent.h"

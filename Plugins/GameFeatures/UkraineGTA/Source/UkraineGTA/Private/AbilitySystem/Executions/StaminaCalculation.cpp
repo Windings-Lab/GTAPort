@@ -3,7 +3,7 @@
 
 #include "AbilitySystem/Executions/StaminaCalculation.h"
 
-#include "AbilitySystem/Attributes/GTACombatSet.h"
+#include "AbilitySystem/Attributes/StaminaAttributeSet.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -13,7 +13,7 @@ struct FStaminaCalcStatics
 
 	FStaminaCalcStatics()
 	{
-		StaminaModifierDef = FGameplayEffectAttributeCaptureDefinition(UGTACombatSet::GetStaminaModifierAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
+		StaminaModifierDef = FGameplayEffectAttributeCaptureDefinition(UStaminaAttributeSet::GetModifier_StaminaAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 	}
 };
 
@@ -51,7 +51,7 @@ void UStaminaCalculation::Execute_Implementation(const FGameplayEffectCustomExec
 	const float Speed = CharacterMovement->Velocity.Length();
 	const bool bFlying = CharacterMovement->MovementMode == MOVE_Falling;
 	
-	const float CurrentStamina = ExecutionParams.GetSourceAbilitySystemComponent()->GetNumericAttribute(UGTACombatSet::GetStaminaAttribute());
+	const float CurrentStamina = ExecutionParams.GetSourceAbilitySystemComponent()->GetNumericAttribute(UStaminaAttributeSet::GetModifier_StaminaAttribute());
 	const bool RequiredSpeed = CurrentStamina > 20.f ? Speed >= 600.f : Speed > 0.f;
 	if(Spec.GetDuration() == FGameplayEffectConstants::INSTANT_APPLICATION)
 	{
@@ -71,7 +71,7 @@ void UStaminaCalculation::Execute_Implementation(const FGameplayEffectCustomExec
 	
 	if (Result != 0.0f)
 	{
-		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UGTACombatSet::GetStaminaModifierAttribute(), EGameplayModOp::Additive, Result));
+		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UStaminaAttributeSet::GetModifier_StaminaAttribute(), EGameplayModOp::Additive, Result));
 	}
 #endif // #if WITH_SERVER_CODE
 }

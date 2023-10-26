@@ -4,6 +4,7 @@
 #include "Abstract/AttributeHandlerComponent.h"
 
 #include "LyraLogChannels.h"
+#include "Abstract/AbilitySystem/Attributes/GTABaseAttributeSet.h"
 
 UAttributeHandlerComponent::UAttributeHandlerComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -14,6 +15,7 @@ UAttributeHandlerComponent::UAttributeHandlerComponent(const FObjectInitializer&
 	SetIsReplicatedByDefault(true);
 	
 	AbilitySystemComponent = nullptr;
+	AttributeSet = nullptr;
 }
 
 void UAttributeHandlerComponent::InitializeWithAbilitySystem(ULyraAbilitySystemComponent* InASC)
@@ -30,24 +32,41 @@ void UAttributeHandlerComponent::InitializeWithAbilitySystem(ULyraAbilitySystemC
 	AbilitySystemComponent = InASC;
 	if (!AbilitySystemComponent)
 	{
-		UE_LOG(LogLyra, Error, TEXT("LyraHealthComponent: Cannot initialize attribute handler component for owner [%s] with NULL ability system."), *GetNameSafe(Owner));
+		UE_LOG(LogLyra, Error, TEXT("UAttributeHandlerComponent: Cannot initialize attribute handler component for owner [%s] with NULL ability system."), *GetNameSafe(Owner));
 		return;
 	}
+
+	AfterASCInit();
+
+	AttributeSet->OnValueChanged.AddUObject(this, &ThisClass::HandleValueChanged);
+	AttributeSet->OnMaxValueChanged.AddUObject(this, &ThisClass::HandleMaxValueChanged);
+	AttributeSet->OnLowValue.AddUObject(this, &ThisClass::HandleLowValue);
+
+	OnValueChanged.Broadcast(this, AttributeSet->GetValue(), AttributeSet->GetValue(), nullptr);
+	OnMaxValueChanged.Broadcast(this, AttributeSet->GetMaxValue(), AttributeSet->GetMaxValue(), nullptr);
 }
 
 void UAttributeHandlerComponent::UninitializeFromAbilitySystem()
 {
+	if (AttributeSet)
+	{
+		AttributeSet->OnValueChanged.RemoveAll(this);
+		AttributeSet->OnMaxValueChanged.RemoveAll(this);
+		AttributeSet->OnLowValue.RemoveAll(this);
+	}
+	
 	AbilitySystemComponent = nullptr;
+	AttributeSet = nullptr;
 }
 
 float UAttributeHandlerComponent::GetValue() const
 {
-	return 0.f;
+	return AttributeSet ? AttributeSet->GetValue() : 0.f;
 }
 
 float UAttributeHandlerComponent::GetMaxValue() const
 {
-	return 0.f;
+	return AttributeSet ? AttributeSet->GetMaxValue() : 0.f;
 }
 
 float UAttributeHandlerComponent::GetValueNormalized() const

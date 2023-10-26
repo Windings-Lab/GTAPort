@@ -19,8 +19,4 @@ class UKRAINEGTA_API AGTAPlayerState : public ALyraPlayerState
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-protected:
-	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<const class UGTACombatSet> GTACombatSet;
 };

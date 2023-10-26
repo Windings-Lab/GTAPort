@@ -3,7 +3,7 @@
 
 #include "AbilitySystem/Executions/HungerCalculation.h"
 
-#include "AbilitySystem/Attributes/GTACombatSet.h"
+#include "AbilitySystem/Attributes/HungerAttributeSet.h"
 
 struct FHungerCalcStatics
 {
@@ -11,7 +11,7 @@ struct FHungerCalcStatics
 
 	FHungerCalcStatics()
 	{
-		HungerModifierDef = FGameplayEffectAttributeCaptureDefinition(UGTACombatSet::GetHungerModifierAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
+		HungerModifierDef = FGameplayEffectAttributeCaptureDefinition(UHungerAttributeSet::GetModifier_HungerAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 	}
 };
 
@@ -46,7 +46,7 @@ void UHungerCalculation::Execute_Implementation(const FGameplayEffectCustomExecu
 
 	if (Result != 0.0f)
 	{
-		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UGTACombatSet::GetHungerModifierAttribute(), EGameplayModOp::Additive, Result));
+		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UHungerAttributeSet::GetModifier_HungerAttribute(), EGameplayModOp::Additive, Result));
 	}
 #endif // #if WITH_SERVER_CODE
 }

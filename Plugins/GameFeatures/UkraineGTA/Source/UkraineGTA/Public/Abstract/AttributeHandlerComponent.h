@@ -6,6 +6,7 @@
 #include "Components/GameFrameworkComponent.h"
 #include "AttributeHandlerComponent.generated.h"
 
+class UGTABaseAttributeSet;
 class ULyraAttributeSet;
 struct FGameplayEffectSpec;
 class ULyraAbilitySystemComponent;
@@ -33,13 +34,16 @@ public:
 	virtual void UninitializeFromAbilitySystem();
 
 	UFUNCTION(BlueprintCallable, Category = "Attribute")
-	virtual float GetValue() const;
+	float GetValue() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Attribute")
-	virtual float GetMaxValue() const;
+	float GetMaxValue() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Attribute")
 	float GetValueNormalized() const;
+
+protected:
+	virtual void AfterASCInit() PURE_VIRTUAL(UAttributeHandlerComponent::AfterASCInit,);
 
 public:
 	UPROPERTY(BlueprintAssignable)
@@ -67,4 +71,7 @@ protected:
 	// Ability system used by this component.
 	UPROPERTY()
 	TObjectPtr<ULyraAbilitySystemComponent> AbilitySystemComponent;
+
+	UPROPERTY()
+	TObjectPtr<const UGTABaseAttributeSet> AttributeSet;
 };

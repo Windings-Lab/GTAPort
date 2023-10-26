@@ -3,7 +3,7 @@
 
 #include "AbilitySystem/Executions/GTADamageExecution.h"
 
-#include "AbilitySystem/Attributes/GTACombatSet.h"
+#include "AbilitySystem/Attributes/ArmorAttributeSet.h"
 #include "AbilitySystem/Attributes/LyraCombatSet.h"
 #include "AbilitySystem/Attributes/LyraHealthSet.h"
 
@@ -15,7 +15,7 @@ struct FGTADamageStatics
 	FGTADamageStatics()
 	{
 		BaseDamageDef = FGameplayEffectAttributeCaptureDefinition(ULyraCombatSet::GetBaseDamageAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
-		ArmorModifierDef = FGameplayEffectAttributeCaptureDefinition(UGTACombatSet::GetArmorModifierAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
+		ArmorModifierDef = FGameplayEffectAttributeCaptureDefinition(UArmorAttributeSet::GetModifier_ArmorAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 	}
 };
 
@@ -49,8 +49,8 @@ void UGTADamageExecution::Execute_Implementation(const FGameplayEffectCustomExec
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().BaseDamageDef, EvaluateParameters, BaseDamage);
 	BaseDamage = FMath::Max(BaseDamage, 0.0f);
 	
-	float ArmorReductionPercent = ExecutionParams.GetSourceAbilitySystemComponent()->GetNumericAttribute(UGTACombatSet::GetArmorPercentReductionAttribute());
-	float CurrentArmorNormalized = ExecutionParams.GetSourceAbilitySystemComponent()->GetNumericAttribute(UGTACombatSet::GetArmorAttribute());
+	float ArmorReductionPercent = ExecutionParams.GetSourceAbilitySystemComponent()->GetNumericAttribute(UArmorAttributeSet::GetArmorPercentReductionAttribute());
+	float CurrentArmorNormalized = ExecutionParams.GetSourceAbilitySystemComponent()->GetNumericAttribute(UArmorAttributeSet::GetArmorAttribute());
 	CurrentArmorNormalized = CurrentArmorNormalized > 0.f ? 1.f : 0.f;
 	
 	float DamageToArmor = 0.f;
@@ -69,7 +69,7 @@ void UGTADamageExecution::Execute_Implementation(const FGameplayEffectCustomExec
 	if (Result > 0.0f)
 	{
 		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(ULyraHealthSet::GetDamageAttribute(), EGameplayModOp::Additive, Result));
-		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UGTACombatSet::GetArmorModifierAttribute(), EGameplayModOp::Additive, -DamageToArmor));
+		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UArmorAttributeSet::GetModifier_ArmorAttribute(), EGameplayModOp::Additive, -DamageToArmor));
 	}
 #endif // #if WITH_SERVER_CODE
 }

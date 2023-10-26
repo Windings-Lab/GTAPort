@@ -2,8 +2,7 @@
 
 
 #include "AbilitySystem/Executions/ArmorCalculation.h"
-
-#include "AbilitySystem/Attributes/GTACombatSet.h"
+#include "AbilitySystem/Attributes/ArmorAttributeSet.h"
 
 struct FArmorCalcStatics
 {
@@ -11,7 +10,7 @@ struct FArmorCalcStatics
 
 	FArmorCalcStatics()
 	{
-		ArmorModifierDef = FGameplayEffectAttributeCaptureDefinition(UGTACombatSet::GetArmorModifierAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
+		ArmorModifierDef = FGameplayEffectAttributeCaptureDefinition(UArmorAttributeSet::GetModifier_ArmorAttribute(), EGameplayEffectAttributeCaptureSource::Source, true);
 	}
 };
 
@@ -44,7 +43,7 @@ void UArmorCalculation::Execute_Implementation(const FGameplayEffectCustomExecut
 	
 	if (ArmorModifier != 0.0f)
 	{
-		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UGTACombatSet::GetArmorModifierAttribute(), EGameplayModOp::Additive, ArmorModifier));
+		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(UArmorAttributeSet::GetModifier_ArmorAttribute(), EGameplayModOp::Additive, ArmorModifier));
 	}
 #endif // #if WITH_SERVER_CODE
 }

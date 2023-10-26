@@ -2,11 +2,10 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Abstract/AttributeHandlerComponent.h"
 #include "ArmorHandlerComponent.generated.h"
 
-class UGTACombatSet;
+class UArmorAttributeSet;
 /**
  * 
  */
@@ -20,15 +19,7 @@ public:
 	static UArmorHandlerComponent* FindArmorComponent(const AActor* Actor) { return (Actor ? Actor->FindComponentByClass<UArmorHandlerComponent>() : nullptr); }
 	
 	UArmorHandlerComponent(const FObjectInitializer& ObjectInitializer);
-	
-	virtual void InitializeWithAbilitySystem(ULyraAbilitySystemComponent* InASC) override;
-	virtual void UninitializeFromAbilitySystem() override;
 
-	virtual float GetValue() const override;
-	virtual float GetMaxValue() const override;
-	
-private:
-	// Attribute set used by this component.
-	UPROPERTY()
-	TObjectPtr<const UGTACombatSet> GTACombatSet;
+protected:
+	virtual void AfterASCInit() override;
 };
