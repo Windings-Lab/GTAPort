@@ -84,9 +84,6 @@ protected:
 	void Input_LookStick(const FInputActionValue& InputActionValue);
 
 	TSubclassOf<ULyraCameraMode> DetermineCameraMode() const;
-	
-	void OnInputConfigActivated(const FLoadedMappableConfigPair& ConfigPair);
-	void OnInputConfigDeactivated(const FLoadedMappableConfigPair& ConfigPair);
 
 protected:
 

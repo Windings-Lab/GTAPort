@@ -7,8 +7,6 @@
 #include "LyraGameplayTags.h"
 #include "Net/UnrealNetwork.h"
 
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Gameplay_DamageSelfDestruct, "Gameplay.Damage.SelfDestruct");
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Gameplay_DamageImmunity, "Gameplay.DamageImmunity");
 UE_DEFINE_GAMEPLAY_TAG(TAG_GTA_ArmorModified_Message, "GTA.ArmorModified.Message");
 
 UArmorAttributeSet::UArmorAttributeSet()
@@ -32,9 +30,9 @@ bool UArmorAttributeSet::PreGameplayEffectExecute(FGameplayEffectModCallbackData
 
 	if (Data.EvaluatedData.Magnitude < 0.0f)
 	{
-		const bool bIsDamageFromSelfDestruct = Data.EffectSpec.GetDynamicAssetTags().HasTagExact(TAG_Gameplay_DamageSelfDestruct);
+		const bool bIsDamageFromSelfDestruct = Data.EffectSpec.GetDynamicAssetTags().HasTagExact(LyraGameplayTags::TAG_Gameplay_DamageSelfDestruct);
 
-		if (Data.Target.HasMatchingGameplayTag(TAG_Gameplay_DamageImmunity) && !bIsDamageFromSelfDestruct)
+		if (Data.Target.HasMatchingGameplayTag(LyraGameplayTags::TAG_Gameplay_DamageImmunity) && !bIsDamageFromSelfDestruct)
 		{
 			Data.EvaluatedData.Magnitude = 0.0f;
 			return false;
@@ -55,7 +53,7 @@ bool UArmorAttributeSet::PreGameplayEffectExecute(FGameplayEffectModCallbackData
 
 void UArmorAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
-	const bool bIsDamageFromSelfDestruct = Data.EffectSpec.GetDynamicAssetTags().HasTagExact(TAG_Gameplay_DamageSelfDestruct);
+	const bool bIsDamageFromSelfDestruct = Data.EffectSpec.GetDynamicAssetTags().HasTagExact(LyraGameplayTags::TAG_Gameplay_DamageSelfDestruct);
 	MinValue = 0.0f;
 
 #if !UE_BUILD_SHIPPING

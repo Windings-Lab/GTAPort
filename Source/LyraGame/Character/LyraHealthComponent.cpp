@@ -296,7 +296,7 @@ void ULyraHealthComponent::DamageSelfDestruct(bool bFellOutOfWorld)
 			return;
 		}
 
-		Spec->AddDynamicAssetTag(TAG_Gameplay_DamageSelfDestruct);
+		Spec->AddDynamicAssetTag(LyraGameplayTags::TAG_Gameplay_DamageSelfDestruct);
 
 		if (bFellOutOfWorld)
 		{

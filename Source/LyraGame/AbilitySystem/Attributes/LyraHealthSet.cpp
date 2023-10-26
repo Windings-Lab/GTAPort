@@ -13,8 +13,6 @@
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraHealthSet)
 
 UE_DEFINE_GAMEPLAY_TAG(TAG_Gameplay_Damage, "Gameplay.Damage");
-UE_DEFINE_GAMEPLAY_TAG(TAG_Gameplay_DamageImmunity, "Gameplay.DamageImmunity");
-UE_DEFINE_GAMEPLAY_TAG(TAG_Gameplay_DamageSelfDestruct, "Gameplay.Damage.SelfDestruct");
 UE_DEFINE_GAMEPLAY_TAG(TAG_Gameplay_FellOutOfWorld, "Gameplay.Damage.FellOutOfWorld");
 UE_DEFINE_GAMEPLAY_TAG(TAG_Lyra_Damage_Message, "Lyra.Damage.Message");
 
@@ -77,9 +75,9 @@ bool ULyraHealthSet::PreGameplayEffectExecute(FGameplayEffectModCallbackData &Da
 	{
 		if (Data.EvaluatedData.Magnitude > 0.0f)
 		{
-			const bool bIsDamageFromSelfDestruct = Data.EffectSpec.GetDynamicAssetTags().HasTagExact(TAG_Gameplay_DamageSelfDestruct);
+			const bool bIsDamageFromSelfDestruct = Data.EffectSpec.GetDynamicAssetTags().HasTagExact(LyraGameplayTags::TAG_Gameplay_DamageSelfDestruct);
 
-			if (Data.Target.HasMatchingGameplayTag(TAG_Gameplay_DamageImmunity) && !bIsDamageFromSelfDestruct)
+			if (Data.Target.HasMatchingGameplayTag(LyraGameplayTags::TAG_Gameplay_DamageImmunity) && !bIsDamageFromSelfDestruct)
 			{
 				// Do not take away any health.
 				Data.EvaluatedData.Magnitude = 0.0f;
@@ -109,7 +107,7 @@ void ULyraHealthSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackD
 {
 	Super::PostGameplayEffectExecute(Data);
 
-	const bool bIsDamageFromSelfDestruct = Data.EffectSpec.GetDynamicAssetTags().HasTagExact(TAG_Gameplay_DamageSelfDestruct);
+	const bool bIsDamageFromSelfDestruct = Data.EffectSpec.GetDynamicAssetTags().HasTagExact(LyraGameplayTags::TAG_Gameplay_DamageSelfDestruct);
 	float MinimumHealth = 0.0f;
 
 #if !UE_BUILD_SHIPPING
