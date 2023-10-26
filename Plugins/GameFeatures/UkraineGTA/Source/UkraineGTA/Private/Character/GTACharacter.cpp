@@ -3,18 +3,25 @@
 
 #include "Character/GTACharacter.h"
 
+#include "BuoyancyComponent.h"
 #include "Character/GTAHeroComponent.h"
 #include "Character/Components/ArmorHandlerComponent.h"
 #include "Character/Components/HungerHandlerComponent.h"
+#include "Character/Components/OxygenHandlerComponent.h"
 #include "Character/Components/StaminaHandlerComponent.h"
 #include "Character/Components/WaterLogicComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "Equipment/LyraQuickBarComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Inventory/LyraInventoryManagerComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 AGTACharacter::AGTACharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = true;
+	
 	GTAHeroComponent = CreateDefaultSubobject<UGTAHeroComponent>(TEXT("GTAHeroComponent"));
 	
 	WaterLogicComponent = CreateDefaultSubobject<UWaterLogicComponent>(TEXT("WaterLogicComponent"));
@@ -29,6 +36,46 @@ AGTACharacter::AGTACharacter()
 	StaminaComponent = CreateDefaultSubobject<UStaminaHandlerComponent>(TEXT("StaminaComponent"));
 	HungerComponent  = CreateDefaultSubobject<UHungerHandlerComponent>(TEXT("HungerComponent"));
 	ArmorComponent   = CreateDefaultSubobject<UArmorHandlerComponent>(TEXT("ArmorComponent"));
+	OxygenComponent  = CreateDefaultSubobject<UOxygenHandlerComponent>(TEXT("OxygenComponent"));
+
+	BuoyancyComponent = CreateDefaultSubobject<UBuoyancyComponent>(TEXT("BuoyancyComponent"));
+}
+
+void AGTACharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	const auto& Pontoon = WaterHeightChecker;
+	TMap<const UWaterBodyComponent*, float> SplineInputKeys;
+	TMap<const UWaterBodyComponent*, float> SplineSegments;
+	BuoyancyComponent->GetWaterSplineKey(Pontoon->GetComponentLocation(), SplineInputKeys, SplineSegments);
+	
+	float WaterHeight = BuoyancyComponent->GetWaterHeight(Pontoon->GetComponentLocation() - GetActorUpVector() * 100.f, SplineInputKeys, -100000.f, true);
+	float ActorHeight = WaterHeight - Pontoon->GetComponentLocation().Z;
+	
+	UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("ActorHeight: %f"), ActorHeight)
+		, true, false
+		, FLinearColor::Red, 1.f, TEXT("ActorHeight"));
+	UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("WaterHeight: %f"), WaterHeight)
+	, true, false
+	, FLinearColor::Red, 1.f, TEXT("WaterHeight"));
+
+	if(ActorHeight > 0)
+	{
+		WaterLogicComponent->SetUnderWater(true);
+	}
+	else if(ActorHeight < 0)
+	{
+		WaterLogicComponent->SetUnderWater(false);
+		if(IsSwimming() && !IsTouchingGroundInWater() && GetCharacterMovement()->Velocity.Z >= 0.f)
+		{
+			const FVector PontoonLoc = Pontoon->GetComponentLocation();
+			const FVector RelPontoonLoc = Pontoon->GetRelativeLocation();
+			const FVector ActorLoc = GetActorLocation();
+			const float FloatAtHeight = FMath::Lerp(PontoonLoc.Z, WaterHeight + 10.f, 0.5f);
+			SetActorLocation(FVector(ActorLoc.X, ActorLoc.Y, FloatAtHeight - RelPontoonLoc.Z));
+		}
+	}
 }
 
 bool AGTACharacter::IsSwimming() const
@@ -36,9 +83,9 @@ bool AGTACharacter::IsSwimming() const
 	return WaterLogicComponent->IsSwimming();
 }
 
-bool AGTACharacter::IsInWater() const
+bool AGTACharacter::AffectedByWater() const
 {
-	return WaterLogicComponent->IsInWater();
+	return WaterLogicComponent->AffectedByWater();
 }
 
 bool AGTACharacter::IsTouchingGroundInWater() const
@@ -46,9 +93,9 @@ bool AGTACharacter::IsTouchingGroundInWater() const
 	return WaterLogicComponent->IsTouchingGroundInWater();
 }
 
-bool AGTACharacter::CanSwimUp() const
+bool AGTACharacter::IsUnderWater() const
 {
-	return WaterLogicComponent->bCanSwimUp;
+	return WaterLogicComponent->IsUnderWater();
 }
 
 void AGTACharacter::AddInitialInventory()
@@ -78,6 +125,7 @@ void AGTACharacter::OnAbilitySystemInitialized()
 	StaminaComponent->InitializeWithAbilitySystem(LyraASC);
 	HungerComponent->InitializeWithAbilitySystem(LyraASC);
 	ArmorComponent->InitializeWithAbilitySystem(LyraASC);
+	OxygenComponent->InitializeWithAbilitySystem(LyraASC);
 }
 
 void AGTACharacter::OnAbilitySystemUninitialized()
@@ -86,6 +134,7 @@ void AGTACharacter::OnAbilitySystemUninitialized()
 	StaminaComponent->UninitializeFromAbilitySystem();
 	HungerComponent->UninitializeFromAbilitySystem();
 	ArmorComponent->UninitializeFromAbilitySystem();
+	OxygenComponent->UninitializeFromAbilitySystem();
 }
 
 void AGTACharacter::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
@@ -94,20 +143,20 @@ void AGTACharacter::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent
 		, int32 OtherBodyIndex, bool bFromSweep
 		, const FHitResult& SweepResult)
 {
+	const bool bWaterCollision = OtherComp->GetCollisionProfileName() == FName(TEXT("WaterBodyCollision"));
+	
 	if(OverlappedComponent == GetCapsuleComponent())
 	{
-		if(OtherComp->GetCollisionProfileName() == FName(TEXT("WaterBodyCollision")))
+		if(bWaterCollision)
 		{
-			if(!IsInWater())
-				WaterLogicComponent->SetAffectedByWater(true);
+			WaterLogicComponent->SetAffectedByWater(true);
 		}
 	}
 	else if(OverlappedComponent == WaterHeightChecker)
 	{
-		if(OtherComp->GetCollisionProfileName() == FName(TEXT("WaterBodyCollision")))
+		if(bWaterCollision)
 		{
-			if(!IsSwimming() || !CanSwimUp())
-				WaterLogicComponent->SetSwimming(true);
+			//WaterLogicComponent->SetSwimming(true);
 		}
 	}
 }
@@ -117,20 +166,20 @@ void AGTACharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComponent
 		, UPrimitiveComponent* OtherComp
 		, int32 OtherBodyIndex)
 {
+	const bool bWaterCollision = OtherComp->GetCollisionProfileName() == FName(TEXT("WaterBodyCollision"));
+	
 	if(OverlappedComponent == GetCapsuleComponent())
 	{
-		if(OtherComp->GetCollisionProfileName() == FName(TEXT("WaterBodyCollision")))
+		if(bWaterCollision)
 		{
-			if(IsInWater())
-				WaterLogicComponent->SetAffectedByWater(false);
+			WaterLogicComponent->SetAffectedByWater(false);
 		}
 	}
 	else if(OverlappedComponent == WaterHeightChecker)
 	{
-		if(OtherComp->GetCollisionProfileName() == FName(TEXT("WaterBodyCollision")))
+		if(bWaterCollision)
 		{
-			if(IsSwimming())
-				WaterLogicComponent->SetSwimming(false);
+			//WaterLogicComponent->SetSwimming(false);
 		}
 	}
 }

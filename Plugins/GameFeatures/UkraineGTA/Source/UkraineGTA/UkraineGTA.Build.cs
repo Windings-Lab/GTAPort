@@ -46,7 +46,8 @@ public class UkraineGTA : ModuleRules
 				"GameplayAbilities",
 				"GameplayTags",
 				"UMG", 
-				"CommonUI"
+				"CommonUI",
+				"Water"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

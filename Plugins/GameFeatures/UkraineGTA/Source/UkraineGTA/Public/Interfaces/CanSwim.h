@@ -22,7 +22,7 @@ class UKRAINEGTA_API ICanSwim
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	virtual bool IsSwimming() const;
-	virtual bool IsInWater() const;
+	virtual bool AffectedByWater() const;
 	virtual bool IsTouchingGroundInWater() const;
-	virtual bool CanSwimUp() const;
+	virtual bool IsUnderWater() const;
 };

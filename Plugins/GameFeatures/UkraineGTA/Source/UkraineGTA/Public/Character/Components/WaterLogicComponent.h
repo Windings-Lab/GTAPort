@@ -18,21 +18,20 @@ public:
 
 	void SetAffectedByWater(bool Value);
 	void SetSwimming(bool Value);
+	void SetUnderWater(bool Value);
 
 	virtual bool IsSwimming() const override;
-	virtual bool IsInWater() const override;
+	virtual bool AffectedByWater() const override;
 	virtual bool IsTouchingGroundInWater() const override;
-	virtual bool CanSwimUp() const override;
-
-public:
-	bool bCanSwimUp;
+	virtual bool IsUnderWater() const override;
 
 protected:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	
 private:
 	bool bSwimming;
 	bool bWaterAffection;
 	bool bTouchingGround;
+	bool bUnderWater;
 };

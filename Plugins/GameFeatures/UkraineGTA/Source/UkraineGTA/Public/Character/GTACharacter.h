@@ -23,11 +23,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 		virtual bool IsSwimming() const override;
 	UFUNCTION(BlueprintCallable)
-		virtual bool IsInWater() const override;
+		virtual bool AffectedByWater() const override;
 	UFUNCTION(BlueprintCallable)
 		virtual bool IsTouchingGroundInWater() const override;
 	UFUNCTION(BlueprintCallable)
-		virtual bool CanSwimUp() const override;
+		virtual bool IsUnderWater() const override;
 	//~End of ICanSwim Interface
 
 	UFUNCTION(BlueprintImplementableEvent)
@@ -56,6 +56,8 @@ protected:
 		, UPrimitiveComponent* OtherComp
 		, int32 OtherBodyIndex);
 
+	virtual void Tick(float DeltaSeconds) override;
+	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UGTAHeroComponent> GTAHeroComponent;
@@ -69,12 +71,18 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UArmorHandlerComponent> ArmorComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UOxygenHandlerComponent> OxygenComponent;
+
 	//~Begin of Water Logic
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UWaterLogicComponent> WaterLogicComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class USphereComponent> WaterHeightChecker;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UBuoyancyComponent> BuoyancyComponent;
 	//~End of Water Logic
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GTA|Character|Inventory", Meta = (AllowPrivateAccess = "true"))

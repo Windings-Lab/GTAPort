@@ -122,7 +122,7 @@ void UGTAHeroComponent::Input_Swim(const FInputActionValue& InputActionValue)
 
 	if(ICanSwim* PawnThatSwim = Cast<ICanSwim>(Pawn))
 	{
-		if((Value.Z > 0.f && PawnThatSwim->CanSwimUp()) || Value.Z < 0.f)
+		if((Value.Z > 0.f && PawnThatSwim->IsUnderWater()) || Value.Z < 0.f)
 		{
 			const FVector MovementDirection = MovementRotation.RotateVector(FVector::UpVector);
 			Pawn->AddMovementInput(MovementDirection, Value.Z);
@@ -130,7 +130,7 @@ void UGTAHeroComponent::Input_Swim(const FInputActionValue& InputActionValue)
 	}
 	else
 	{
-		if (Value.Z != 0.0f)
+		if (Value.Z != 0.0f )
 		{
 			const FVector MovementDirection = MovementRotation.RotateVector(FVector::UpVector);
 			Pawn->AddMovementInput(MovementDirection, Value.Z);

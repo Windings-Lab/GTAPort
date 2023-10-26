@@ -56,6 +56,10 @@
 		{
 			"Name": "GTAExplorer",
 			"Enabled": true
+		},
+		{
+			"Name": "Water",
+			"Enabled": true
 		}
 	]
 }

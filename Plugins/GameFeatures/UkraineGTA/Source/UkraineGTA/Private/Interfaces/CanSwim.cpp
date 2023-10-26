@@ -9,7 +9,7 @@ bool ICanSwim::IsSwimming() const
 	return false;
 }
 
-bool ICanSwim::IsInWater() const
+bool ICanSwim::AffectedByWater() const
 {
 	return false;
 }
@@ -19,7 +19,7 @@ bool ICanSwim::IsTouchingGroundInWater() const
 	return false;
 }
 
-bool ICanSwim::CanSwimUp() const
+bool ICanSwim::IsUnderWater() const
 {
 	return false;
 }
