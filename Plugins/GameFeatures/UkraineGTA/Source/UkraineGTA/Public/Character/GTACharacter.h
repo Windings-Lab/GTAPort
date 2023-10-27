@@ -30,9 +30,6 @@ public:
 		virtual bool IsUnderWater() const override;
 	//~End of ICanSwim Interface
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void K2_OnSetSwimming(bool Value);
-
 	UFUNCTION(BlueprintCallable)
 	void AddInitialInventory();
 
@@ -55,8 +52,6 @@ protected:
 		, AActor* OtherActor
 		, UPrimitiveComponent* OtherComp
 		, int32 OtherBodyIndex);
-
-	virtual void Tick(float DeltaSeconds) override;
 	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))

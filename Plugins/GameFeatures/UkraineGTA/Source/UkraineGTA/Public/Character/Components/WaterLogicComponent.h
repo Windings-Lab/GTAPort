@@ -7,6 +7,11 @@
 #include "WaterLogicComponent.generated.h"
 
 
+class UCapsuleComponent;
+class UCharacterMovementComponent;
+class UBuoyancyComponent;
+class ULyraAbilitySystemComponent;
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class UKRAINEGTA_API UWaterLogicComponent : public UActorComponent, public ICanSwim
 {
@@ -15,6 +20,13 @@ class UKRAINEGTA_API UWaterLogicComponent : public UActorComponent, public ICanS
 public:	
 	// Sets default values for this component's properties
 	UWaterLogicComponent();
+
+	virtual void BeginPlay() override;
+	
+	void InitializeWithAbilitySystem(ULyraAbilitySystemComponent* InASC,
+		USceneComponent* InPontoon, UBuoyancyComponent* InBuoyancyComponent, UCharacterMovementComponent* InMovement,
+		UCapsuleComponent* InCapsuleComponent);
+	void CheckUnderWater();
 
 	void SetAffectedByWater(bool Value);
 	void SetSwimming(bool Value);
@@ -30,8 +42,23 @@ protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 private:
-	bool bSwimming;
-	bool bWaterAffection;
 	bool bTouchingGround;
-	bool bUnderWater;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	bool DebugWaterInfo;
+	
+	UPROPERTY()
+	TObjectPtr<ULyraAbilitySystemComponent> AbilitySystemComponent;
+
+	UPROPERTY()
+	TObjectPtr<USceneComponent> Pontoon;
+
+	UPROPERTY()
+	TObjectPtr<UBuoyancyComponent> BuoyancyComponent;
+
+	UPROPERTY()
+	TObjectPtr<UCharacterMovementComponent> MovementComponent;
+
+	UPROPERTY()
+	TObjectPtr<UCapsuleComponent> CapsuleComponent;
 };

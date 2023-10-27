@@ -13,15 +13,10 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "Equipment/LyraQuickBarComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Inventory/LyraInventoryManagerComponent.h"
-#include "Kismet/KismetSystemLibrary.h"
 
 AGTACharacter::AGTACharacter()
 {
-	PrimaryActorTick.bCanEverTick = true;
-	PrimaryActorTick.bStartWithTickEnabled = true;
-	
 	GTAHeroComponent = CreateDefaultSubobject<UGTAHeroComponent>(TEXT("GTAHeroComponent"));
 	
 	WaterLogicComponent = CreateDefaultSubobject<UWaterLogicComponent>(TEXT("WaterLogicComponent"));
@@ -39,43 +34,6 @@ AGTACharacter::AGTACharacter()
 	OxygenComponent  = CreateDefaultSubobject<UOxygenHandlerComponent>(TEXT("OxygenComponent"));
 
 	BuoyancyComponent = CreateDefaultSubobject<UBuoyancyComponent>(TEXT("BuoyancyComponent"));
-}
-
-void AGTACharacter::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-
-	const auto& Pontoon = WaterHeightChecker;
-	TMap<const UWaterBodyComponent*, float> SplineInputKeys;
-	TMap<const UWaterBodyComponent*, float> SplineSegments;
-	BuoyancyComponent->GetWaterSplineKey(Pontoon->GetComponentLocation(), SplineInputKeys, SplineSegments);
-	
-	float WaterHeight = BuoyancyComponent->GetWaterHeight(Pontoon->GetComponentLocation() - GetActorUpVector() * 100.f, SplineInputKeys, -100000.f, true);
-	float ActorHeight = WaterHeight - Pontoon->GetComponentLocation().Z;
-	
-	UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("ActorHeight: %f"), ActorHeight)
-		, true, false
-		, FLinearColor::Red, 1.f, TEXT("ActorHeight"));
-	UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("WaterHeight: %f"), WaterHeight)
-	, true, false
-	, FLinearColor::Red, 1.f, TEXT("WaterHeight"));
-
-	if(ActorHeight > 0)
-	{
-		WaterLogicComponent->SetUnderWater(true);
-	}
-	else if(ActorHeight < 0)
-	{
-		WaterLogicComponent->SetUnderWater(false);
-		if(IsSwimming() && !IsTouchingGroundInWater() && GetCharacterMovement()->Velocity.Z >= 0.f)
-		{
-			const FVector PontoonLoc = Pontoon->GetComponentLocation();
-			const FVector RelPontoonLoc = Pontoon->GetRelativeLocation();
-			const FVector ActorLoc = GetActorLocation();
-			const float FloatAtHeight = FMath::Lerp(PontoonLoc.Z, WaterHeight + 10.f, 0.5f);
-			SetActorLocation(FVector(ActorLoc.X, ActorLoc.Y, FloatAtHeight - RelPontoonLoc.Z));
-		}
-	}
 }
 
 bool AGTACharacter::IsSwimming() const
@@ -126,6 +84,7 @@ void AGTACharacter::OnAbilitySystemInitialized()
 	HungerComponent->InitializeWithAbilitySystem(LyraASC);
 	ArmorComponent->InitializeWithAbilitySystem(LyraASC);
 	OxygenComponent->InitializeWithAbilitySystem(LyraASC);
+	WaterLogicComponent->InitializeWithAbilitySystem(LyraASC, WaterHeightChecker, BuoyancyComponent, GetCharacterMovement(), GetCapsuleComponent());
 }
 
 void AGTACharacter::OnAbilitySystemUninitialized()

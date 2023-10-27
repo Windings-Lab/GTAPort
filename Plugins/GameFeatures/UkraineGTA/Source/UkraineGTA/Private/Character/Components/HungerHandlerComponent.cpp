@@ -41,4 +41,6 @@ void UHungerHandlerComponent::AfterASCInit()
 	{
 		UE_LOG(LogLyra, Error, TEXT("HungerHandlerComponent: Cannot initialize hunger handler component for owner [%s] with NULL GTACombatSet on the ability system."), *GetNameSafe(Owner));
 	}
+
+	AbilitySystemComponent->SetNumericAttributeBase(UHungerAttributeSet::GetHungerAttribute(), AttributeSet->GetMaxValue());
 }

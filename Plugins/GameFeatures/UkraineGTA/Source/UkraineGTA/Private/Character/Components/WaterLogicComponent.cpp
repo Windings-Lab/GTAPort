@@ -3,84 +3,123 @@
 
 #include "Character/Components/WaterLogicComponent.h"
 
+#include "BuoyancyComponent.h"
 #include "GTAGameplayTags.h"
+#include "LyraLogChannels.h"
+#include "WaterBodyComponent.h"
 #include "AbilitySystem/LyraAbilitySystemComponent.h"
 #include "Character/GTACharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/PhysicsVolume.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 UWaterLogicComponent::UWaterLogicComponent()
-	: bSwimming(false), bWaterAffection(false), bTouchingGround(false), bUnderWater(false)
+	: bTouchingGround(false)
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 }
 
+void UWaterLogicComponent::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+void UWaterLogicComponent::InitializeWithAbilitySystem(ULyraAbilitySystemComponent* InASC
+	, USceneComponent* InPontoon, UBuoyancyComponent* InBuoyancyComponent, UCharacterMovementComponent* InMovement, UCapsuleComponent* InCapsuleComponent)
+{
+	AActor* Owner = GetOwner();
+	check(Owner);
+	
+	AbilitySystemComponent = InASC;
+	if (!AbilitySystemComponent)
+	{
+		UE_LOG(LogLyra, Error, TEXT("UWaterLogicComponent: Cannot initialize water logic component for owner [%s] with NULL ability system."), *GetNameSafe(Owner));
+	}
+
+	Pontoon = InPontoon;
+	BuoyancyComponent = InBuoyancyComponent;
+	MovementComponent = InMovement;
+
+	CapsuleComponent = InCapsuleComponent;
+}
+
+void UWaterLogicComponent::CheckUnderWater()
+{
+	if(!AbilitySystemComponent) return;
+	
+	TMap<const UWaterBodyComponent*, float> SplineInputKeys;
+	TMap<const UWaterBodyComponent*, float> SplineSegments;
+	BuoyancyComponent->GetWaterSplineKey(Pontoon->GetComponentLocation(), SplineInputKeys, SplineSegments);
+	
+	float WaterHeight = BuoyancyComponent->GetWaterHeight(Pontoon->GetComponentLocation() - GetOwner()->GetActorUpVector() * 100.f
+		, SplineInputKeys, -100000.f, true);
+	float ActorInWaterHeight = WaterHeight - Pontoon->GetComponentLocation().Z;
+
+	if(DebugWaterInfo)
+	{
+		UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("ActorInWaterHeight: %f"), ActorInWaterHeight)
+	, true, false
+	, FLinearColor::Red, 1.f, TEXT("ActorInWaterHeight"));
+		UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("WaterHeight: %f"), WaterHeight)
+		, true, false
+		, FLinearColor::Red, 1.f, TEXT("WaterHeight"));
+	}
+
+	if(ActorInWaterHeight > 0)
+	{
+		SetUnderWater(true);
+	}
+	else if(ActorInWaterHeight < 0)
+	{
+		SetUnderWater(false);
+		if(IsSwimming() && !bTouchingGround && MovementComponent->Velocity.Z >= 0.f)
+		{
+			const FVector PontoonLoc = Pontoon->GetComponentLocation();
+			const FVector RelPontoonLoc = Pontoon->GetRelativeLocation();
+			const FVector ActorLoc = GetOwner()->GetActorLocation();
+			const float FloatAtHeight = FMath::Lerp(PontoonLoc.Z, WaterHeight + 10.f, 0.5f);
+			GetOwner()->SetActorLocation(FVector(ActorLoc.X, ActorLoc.Y, FloatAtHeight - RelPontoonLoc.Z));
+		}
+	}
+}
+
 void UWaterLogicComponent::SetAffectedByWater(bool Value)
 {
-	if(Value == bWaterAffection) return;
-	bWaterAffection = Value;
+	if(Value == AffectedByWater()) return;
 	PrimaryComponentTick.SetTickFunctionEnable(Value);
 	
-	AGTACharacter* Character = GetOwner<AGTACharacter>();
-	if (!Character) return;
-
-	if(ULyraAbilitySystemComponent* LyraASC = Character->GetLyraAbilitySystemComponent())
-	{
-		Value
-		? LyraASC->AddLooseGameplayTag(GTAGameplayTags::Ability_Behavior_AffectedByWater)
-		: LyraASC->RemoveLooseGameplayTag(GTAGameplayTags::Ability_Behavior_AffectedByWater);
-	}
-	
-	Character->GetCharacterMovement()->MaxWalkSpeed = Value ? 300.f : 600.f;
+	Value
+	? AbilitySystemComponent->AddLooseGameplayTag(GTAGameplayTags::Ability_Behavior_Water_AffectedByWater)
+	: AbilitySystemComponent->RemoveLooseGameplayTag(GTAGameplayTags::Ability_Behavior_Water_AffectedByWater);
 }
 
 void UWaterLogicComponent::SetUnderWater(bool Value)
 {
-	if(Value == bUnderWater) return;
-	bUnderWater = Value;
+	if(Value == IsUnderWater()) return;
 	
-	const AGTACharacter* Character = GetOwner<AGTACharacter>();
-	if (!Character) return;
-
-	if(ULyraAbilitySystemComponent* LyraASC = Character->GetLyraAbilitySystemComponent())
-	{
-		Value
-		? LyraASC->AddLooseGameplayTag(GTAGameplayTags::Ability_Behavior_UnderWater)
-		: LyraASC->RemoveLooseGameplayTag(GTAGameplayTags::Ability_Behavior_UnderWater, LyraASC->GetTagCount(GTAGameplayTags::Ability_Behavior_UnderWater));
-	}
-	
-	if(!bUnderWater && bSwimming)
-	{
-		Character->GetCharacterMovement()->Velocity.Z = 0.f;
-		Character->GetCharacterMovement()->UpdateComponentVelocity();
-	}
+	Value
+	? AbilitySystemComponent->AddLooseGameplayTag(GTAGameplayTags::Ability_Behavior_Water_UnderWater)
+	: AbilitySystemComponent->RemoveLooseGameplayTag(GTAGameplayTags::Ability_Behavior_Water_UnderWater);
 }
 
 void UWaterLogicComponent::SetSwimming(bool Value)
 {
-	if(Value == bSwimming) return;
-	bSwimming = Value;
+	if(Value == IsSwimming()) return;
 	
-	AGTACharacter* Character = GetOwner<AGTACharacter>();
-	if (!Character) return;
-	
-	Character->GetCharacterMovement()->GetPhysicsVolume()->bWaterVolume = Value;
-	Character->GetCharacterMovement()->SetMovementMode(Value ? MOVE_Swimming : MOVE_Walking);
-
-	Character->K2_OnSetSwimming(Value);
+	Value
+	? AbilitySystemComponent->AddLooseGameplayTag(GTAGameplayTags::Ability_Behavior_Water_Swimming)
+	: AbilitySystemComponent->RemoveLooseGameplayTag(GTAGameplayTags::Ability_Behavior_Water_Swimming);
 }
 
 bool UWaterLogicComponent::IsSwimming() const
 {
-	return bSwimming;
+	return AbilitySystemComponent->HasMatchingGameplayTag(GTAGameplayTags::Ability_Behavior_Water_Swimming);
 }
 
 bool UWaterLogicComponent::AffectedByWater() const
 {
-	return bWaterAffection;
+	return AbilitySystemComponent->HasMatchingGameplayTag(GTAGameplayTags::Ability_Behavior_Water_AffectedByWater);
 }
 
 bool UWaterLogicComponent::IsTouchingGroundInWater() const
@@ -90,43 +129,58 @@ bool UWaterLogicComponent::IsTouchingGroundInWater() const
 
 bool UWaterLogicComponent::IsUnderWater() const
 {
-	return bUnderWater;
+	return AbilitySystemComponent->HasMatchingGameplayTag(GTAGameplayTags::Ability_Behavior_Water_UnderWater);
 }
 
 void UWaterLogicComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	AGTACharacter* Character = GetOwner<AGTACharacter>();
-	if (!Character) return;
-	
-	FVector StartLocation = Character->GetActorLocation();
-	// Bottom of the character's capsule
-	FVector EndLocation = Character->GetActorLocation() - FVector(0, 0, Character->GetCapsuleComponent()->GetUnscaledCapsuleHalfHeight());
+	const FVector StartLocation = GetOwner()->GetActorLocation();
+	const FVector EndLocation = GetOwner()->GetActorLocation() - FVector(0.f, 0.f, CapsuleComponent->GetUnscaledCapsuleHalfHeight());
 
 	FHitResult HitResult;
-	FCollisionQueryParams CollisionParams;
-	CollisionParams.AddIgnoredActor(Character);
 	bTouchingGround = UKismetSystemLibrary::SphereTraceSingle(GetWorld()
 	                                                          , StartLocation
 	                                                          , EndLocation
 	                                                          , 8.f
 	                                                          , UEngineTypes::ConvertToTraceType(ECC_Visibility)
 	                                                          , false
-	                                                          , {Character}
+	                                                          , {GetOwner()}
 	                                                          , EDrawDebugTrace::Type::ForOneFrame
 	                                                          , HitResult
 	                                                          , false
 	                                                          , FLinearColor::Green
 	                                                          , FLinearColor::Red);
 
-	if(bSwimming && bTouchingGround && !bUnderWater)
+	CheckUnderWater();
+
+	if(IsSwimming() && bTouchingGround && !IsUnderWater())
 	{
 		SetSwimming(false);
 	}
-	else if(!bSwimming && bUnderWater)
+	else if(!IsSwimming() && IsUnderWater())
 	{
 		SetSwimming(true);
+	}
+
+	if(DebugWaterInfo)
+	{
+		UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("AffectedByWater: %hhd"), AffectedByWater())
+			, true, false
+			, FLinearColor::Blue, 1.f, TEXT("AffectedByWater"));
+
+		UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("Swimming: %hhd"), IsSwimming())
+			, true, false
+			, FLinearColor::Blue, 1.f, TEXT("Swimming"));
+
+		UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("IsTouchingGround: %hhd"), IsTouchingGroundInWater())
+			, true, false
+			, FLinearColor::Blue, 1.f, TEXT("IsTouchingGround"));
+
+		UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("IsUnderWater: %hhd"), IsUnderWater())
+			, true, false
+			, FLinearColor::Blue, 1.f, TEXT("IsUnderWater"));
 	}
 }
 

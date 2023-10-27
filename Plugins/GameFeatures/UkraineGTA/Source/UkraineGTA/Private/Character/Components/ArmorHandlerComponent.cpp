@@ -22,4 +22,6 @@ void UArmorHandlerComponent::AfterASCInit()
 	{
 		UE_LOG(LogLyra, Error, TEXT("ArmorHandlerComponent: Cannot initialize armor handler component for owner [%s] with NULL GTACombatSet on the ability system."), *GetNameSafe(Owner));
 	}
+
+	AbilitySystemComponent->SetNumericAttributeBase(UArmorAttributeSet::GetArmorAttribute(), 0.f);
 }

@@ -43,4 +43,6 @@ void UOxygenHandlerComponent::AfterASCInit()
 	{
 		UE_LOG(LogLyra, Error, TEXT("OxygenHandlerComponent: Cannot initialize oxygen handler component for owner [%s] with NULL OxygenAttributeSet on the ability system."), *GetNameSafe(Owner));
 	}
+
+	AbilitySystemComponent->SetNumericAttributeBase(UOxygenAttributeSet::GetOxygenAttribute(), AttributeSet->GetMaxValue());
 }
