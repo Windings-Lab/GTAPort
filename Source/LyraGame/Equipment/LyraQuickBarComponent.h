@@ -14,15 +14,6 @@ class ULyraEquipmentManagerComponent;
 class UObject;
 struct FFrame;
 
-USTRUCT(BlueprintType)
-struct FActiveSlotChangedMessage
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite)
-	int32 NewActiveSlotIndex = -1;
-};
-
 UCLASS(Blueprintable, meta=(BlueprintSpawnableComponent))
 class LYRAGAME_API ULyraQuickBarComponent : public UControllerComponent, public ITransferableInventory
 {
@@ -118,6 +109,6 @@ struct FLyraQuickBarActiveIndexChangedMessage
 	UPROPERTY(BlueprintReadOnly, Category=Inventory)
 	TObjectPtr<AActor> Owner = nullptr;
 
-	UPROPERTY(BlueprintReadOnly, Category=Inventory)
+	UPROPERTY(BlueprintReadWrite, Category=Inventory)
 	int32 ActiveIndex = 0;
 };

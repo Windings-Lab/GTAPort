@@ -19,7 +19,6 @@ namespace LyraGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Behavior_SurvivesDeath, "Ability.Behavior.SurvivesDeath", "An ability with this type tag should not be canceled due to death.");
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(TAG_Lyra_Inventory_Message_SlotChanged, "Lyra.Inventory.Message.SlotChanged", "Message called when inventory slot changed");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(TAG_Lyra_Inventory_Message_ActiveSlotChanged, "Lyra.Inventory.Message.ActiveSlotChanged", "Message called when inventory active slot changed");
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Native_Move, "InputTag.Native.Move", "Move input.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Native_Look_Mouse, "InputTag.Native.Look.Mouse", "Look (mouse) input.");

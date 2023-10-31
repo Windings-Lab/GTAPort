@@ -191,9 +191,6 @@ void ULyraQuickBarComponent::SetActiveSlotIndex_Implementation(int32 NewIndex)
 		EquipItemInSlot();
 
 		OnRep_ActiveSlotIndex();
-
-		UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(GetWorld());
-		MessageSystem.BroadcastMessage(LyraGameplayTags::TAG_Lyra_Inventory_Message_ActiveSlotChanged, FActiveSlotChangedMessage(ActiveSlotIndex));
 	}
 }
 
