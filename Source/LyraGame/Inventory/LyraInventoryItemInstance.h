@@ -32,7 +32,7 @@ struct FSlotChangedMessage
  * ULyraInventoryItemInstance
  */
 UCLASS(BlueprintType)
-class ULyraInventoryItemInstance : public UObject
+class ULyraInventoryItemInstance : public UActorComponent
 {
 	GENERATED_BODY()
 
@@ -45,17 +45,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category=Inventory)
 	int32 GetItemCount() const;
 
+	UFUNCTION(Server, Reliable)
 	void SetItemCount(int32 Value);
 
 	UFUNCTION(BlueprintCallable, Category=Inventory)
 	bool IsStackable() const;
 
+	UFUNCTION(Server, Reliable)
 	void CreateNewData(TSubclassOf<ULyraInventoryItemDefinition> InDef, int32 StackCount);
+	UFUNCTION(Server, Reliable)
 	void DestroyData();
-	
-	//~UObject interface
-	virtual bool IsSupportedForNetworking() const override { return true; }
-	//~End of UObject interface
+	UFUNCTION(Client, Reliable)
+	void PreDestroyData();
 
 	// Adds a specified number of stacks to the tag (does nothing if StackCount is below 1)
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category=Inventory)
@@ -94,11 +95,12 @@ public:
 		return (ResultClass*)this->FindFragmentByClass(ResultClass::StaticClass());
 	}
 
+	UFUNCTION(Server, Reliable)
 	void Swap(ULyraInventoryItemInstance* Other);
 
-	void BroadcastAddMessage();
-	void BroadcastDeleteMessage();
-	void BroadcastChangeMessage();
+protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 
 private:
 #if UE_WITH_IRIS
@@ -106,10 +108,16 @@ private:
 	virtual void RegisterReplicationFragments(UE::Net::FFragmentRegistrationContext& Context, UE::Net::EFragmentRegistrationFlags RegistrationFlags) override;
 #endif // UE_WITH_IRIS
 
+	UFUNCTION(Server, Reliable)
 	void SetItemDef(TSubclassOf<ULyraInventoryItemDefinition> InDef);
+
+	UFUNCTION()
+	void OnRep_Data();
 	
 private:
-	UPROPERTY(Replicated)
+	friend ULyraInventoryItemInstanceData;
+	
+	UPROPERTY(ReplicatedUsing=OnRep_Data)
 	TObjectPtr<ULyraInventoryItemInstanceData> Data = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))

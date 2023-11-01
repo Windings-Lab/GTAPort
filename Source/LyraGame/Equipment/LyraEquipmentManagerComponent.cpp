@@ -19,7 +19,7 @@ struct FReplicationFlags;
 
 FString FLyraAppliedEquipmentEntry::GetDebugString() const
 {
-	return FString::Printf(TEXT("%s of %s"), *GetNameSafe(Instance), *GetNameSafe(EquipmentDefinition.Get()));
+	return FString::Printf(TEXT("%s of %s"), *GetNameSafe(Instance), *GetNameSafe(Instance->GetItemDef().Get()));
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -82,8 +82,8 @@ ULyraEquipmentInstance* FLyraEquipmentList::AddEntry(TSubclassOf<ULyraEquipmentD
 	}
 	
 	FLyraAppliedEquipmentEntry& NewEntry = Entries.AddDefaulted_GetRef();
-	NewEntry.EquipmentDefinition = EquipmentDefinition;
 	NewEntry.Instance = NewObject<ULyraEquipmentInstance>(OwnerComponent->GetOwner(), InstanceType);  //@TODO: Using the actor instead of component as the outer due to UE-127172
+	NewEntry.Instance->SetItemDef(EquipmentDefinition);
 	Result = NewEntry.Instance;
 
 	if (ULyraAbilitySystemComponent* ASC = GetAbilitySystemComponent())

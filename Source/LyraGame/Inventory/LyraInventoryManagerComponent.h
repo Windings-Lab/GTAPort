@@ -121,14 +121,13 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
 	void TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void OnTransferSlotsFinished(const UWorld* World, FSlotChangedMessage Message);
-
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
 	TArray<ULyraInventoryItemInstance*> GetAllItems();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
 	void DeleteFromIndex(int32 Index);
+	UFUNCTION(Server, Reliable)
+	void Server_DeleteFromIndex(int32 Index);
 
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category=Inventory)
 	void AddEmptySlots(int32 Size);

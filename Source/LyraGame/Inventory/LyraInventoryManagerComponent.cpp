@@ -94,17 +94,14 @@ ULyraInventoryItemInstance* FLyraInventoryList::ChangeEntry(TSubclassOf<ULyraInv
 	}
 	else if(Instance->GetItemDef() == ItemDef)
 	{
-		Instance->SetItemCount(Instance->GetItemCount() + StackCount);
+		int32 NewItemCount = Instance->GetItemCount() + StackCount;
+		Instance->SetItemCount(NewItemCount);
 		if(Instance->IsStackable())
 		{
-			check(Instance->GetItemCount() >= 0);
-			if(Instance->GetItemCount() == 0)
+			check(NewItemCount >= 0);
+			if(NewItemCount == 0)
 			{
 				Instance->DestroyData();
-			}
-			else
-			{
-				Instance->BroadcastChangeMessage();
 			}
 		}
 		else
@@ -112,7 +109,7 @@ ULyraInventoryItemInstance* FLyraInventoryList::ChangeEntry(TSubclassOf<ULyraInv
 			// TODO: Implement multiple deletion/insertion
 			if(StackCount < 0)
 			{
-				check(Instance->GetItemCount() >= 0);
+				check(NewItemCount >= 0);
 				Instance->DestroyData();
 			}
 			if(StackCount > 1)
@@ -134,14 +131,15 @@ void FLyraInventoryList::DeleteFromIndex(int32 Index)
 	TArray Indices = {Index};
 
 	if(Instance->IsEmpty()) return;
-	Instance->SetItemCount(Instance->GetItemCount() - 1);
-	if(Instance->GetItemCount() <= 0)
+	
+	const int32 NewItemCount = Instance->GetItemCount() - 1;
+	if(NewItemCount <= 0)
 	{
 		Instance->DestroyData();
 	}
 	else
 	{
-		Instance->BroadcastChangeMessage();
+		Instance->SetItemCount(NewItemCount);
 	}
 }
 
@@ -232,11 +230,6 @@ void ULyraInventoryManagerComponent::TransferSlots_Implementation(UObject* World
 	ITransferableInventory::TransferSlots_Implementation(WorldContextObject, Data);
 }
 
-void ULyraInventoryManagerComponent::OnTransferSlotsFinished_Implementation(const UWorld* World, FSlotChangedMessage Message)
-{
-	ITransferableInventory::OnTransferSlotsFinished_Implementation(World, Message);
-}
-
 TArray<ULyraInventoryItemInstance*> ULyraInventoryManagerComponent::GetAllItems_Implementation()
 {
 	return InventoryList.GetAllItems();
@@ -244,16 +237,17 @@ TArray<ULyraInventoryItemInstance*> ULyraInventoryManagerComponent::GetAllItems_
 
 void ULyraInventoryManagerComponent::DeleteFromIndex_Implementation(int32 Index)
 {
+	Server_DeleteFromIndex(Index);
+}
+
+void ULyraInventoryManagerComponent::Server_DeleteFromIndex_Implementation(int32 Index)
+{
 	InventoryList.DeleteFromIndex(Index);
 }
 
 void ULyraInventoryManagerComponent::AddEmptySlots(int32 Size)
 {
 	InventoryList.AddEmptyEntries(Size);
-	for (auto& Entry : InventoryList.Entries)
-	{
-		AddReplicatedSubObject(Entry.Instance);
-	}
 }
 
 ULyraInventoryItemInstance* ULyraInventoryManagerComponent::FindFirstItemStackByDefinition(TSubclassOf<ULyraInventoryItemDefinition> ItemDef) const

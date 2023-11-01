@@ -113,6 +113,16 @@ void ULyraEquipmentInstance::OnUnequipped()
 	K2_OnUnequipped();
 }
 
+TSubclassOf<ULyraEquipmentDefinition> ULyraEquipmentInstance::GetItemDef()
+{
+	return EquipmentDefinition;
+}
+
+void ULyraEquipmentInstance::SetItemDef(TSubclassOf<ULyraEquipmentDefinition> ItemDef)
+{
+	EquipmentDefinition = ItemDef;
+}
+
 void ULyraEquipmentInstance::OnRep_Instigator()
 {
 }

@@ -18,7 +18,6 @@
 class FLifetimeProperty;
 class ULyraEquipmentDefinition;
 
-UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_QuickBar_Message_SlotsChanged, "Lyra.QuickBar.Message.SlotsChanged");
 UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_Lyra_QuickBar_Message_ActiveIndexChanged, "Lyra.QuickBar.Message.ActiveIndexChanged");
 
 ULyraQuickBarComponent::ULyraQuickBarComponent(const FObjectInitializer& ObjectInitializer)
@@ -33,16 +32,6 @@ void ULyraQuickBarComponent::TransferSlots_Implementation(UObject* WorldContextO
 	ITransferableInventory::TransferSlots_Implementation(WorldContextObject, Data);
 }
 
-void ULyraQuickBarComponent::OnTransferSlotsFinished_Implementation(const UWorld* World, FSlotChangedMessage Message)
-{
-	if(Message.Index == ActiveSlotIndex)
-	{
-		ActiveSlotIndex = -1;
-		SetActiveSlotIndex(Message.Index);
-	}
-	ITransferableInventory::OnTransferSlotsFinished_Implementation(World, Message);
-}
-
 void ULyraQuickBarComponent::DeleteFromIndex_Implementation(int32 Index)
 {
 	auto Instance = Slots[Index];
@@ -52,10 +41,6 @@ void ULyraQuickBarComponent::DeleteFromIndex_Implementation(int32 Index)
 	if(Instance->GetItemCount() <= 0)
 	{
 		Instance->DestroyData();
-	}
-	else
-	{
-		Instance->BroadcastChangeMessage();
 	}
 	
 	if(Index == ActiveSlotIndex && Instance->IsEmpty())
@@ -80,13 +65,15 @@ void ULyraQuickBarComponent::GetLifetimeReplicatedProps(TArray< FLifetimePropert
 
 void ULyraQuickBarComponent::BeginPlay()
 {
+	Super::BeginPlay();
+
+	if(!HasAuthority()) return;
+	
 	for(int i = 0; i < NumSlots; i++)
 	{
 		auto& Slot = Slots.AddDefaulted_GetRef();
 		Slot = NewObject<ULyraInventoryItemInstance>(this);
 	}
-
-	Super::BeginPlay();
 }
 
 
@@ -182,7 +169,7 @@ ULyraEquipmentManagerComponent* ULyraQuickBarComponent::FindEquipmentManager() c
 
 void ULyraQuickBarComponent::SetActiveSlotIndex_Implementation(int32 NewIndex)
 {
-	if (Slots.IsValidIndex(NewIndex) && (ActiveSlotIndex != NewIndex))
+	if (Slots.IsValidIndex(NewIndex))
 	{
 		UnequipItemInSlot();
 
@@ -212,52 +199,6 @@ int32 ULyraQuickBarComponent::GetNextFreeItemSlot() const
 	}
 
 	return INDEX_NONE;
-}
-
-void ULyraQuickBarComponent::AddItemToSlot(int32 SlotIndex, ULyraInventoryItemInstance* Item)
-{
-	if (Slots.IsValidIndex(SlotIndex) && (Item != nullptr))
-	{
-		if (Slots[SlotIndex] == nullptr)
-		{
-			Slots[SlotIndex] = Item;
-			OnRep_Slots();
-		}
-	}
-}
-
-ULyraInventoryItemInstance* ULyraQuickBarComponent::RemoveItemFromSlot(int32 SlotIndex)
-{
-	ULyraInventoryItemInstance* Result = nullptr;
-
-	if (ActiveSlotIndex == SlotIndex)
-	{
-		UnequipItemInSlot();
-		ActiveSlotIndex = -1;
-	}
-
-	if (Slots.IsValidIndex(SlotIndex))
-	{
-		Result = Slots[SlotIndex];
-
-		if (Result != nullptr)
-		{
-			Slots[SlotIndex] = nullptr;
-			OnRep_Slots();
-		}
-	}
-
-	return Result;
-}
-
-void ULyraQuickBarComponent::OnRep_Slots()
-{
-	FLyraQuickBarSlotsChangedMessage Message;
-	Message.Owner = GetOwner();
-	Message.Slots = Slots;
-
-	UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(this);
-	MessageSystem.BroadcastMessage(TAG_Lyra_QuickBar_Message_SlotsChanged, Message);
 }
 
 void ULyraQuickBarComponent::OnRep_ActiveSlotIndex()

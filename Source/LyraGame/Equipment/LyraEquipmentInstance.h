@@ -6,6 +6,7 @@
 
 #include "LyraEquipmentInstance.generated.h"
 
+class ULyraEquipmentDefinition;
 class AActor;
 class APawn;
 struct FFrame;
@@ -49,6 +50,9 @@ public:
 	virtual void OnEquipped();
 	virtual void OnUnequipped();
 
+	TSubclassOf<ULyraEquipmentDefinition> GetItemDef();
+	void SetItemDef(TSubclassOf<ULyraEquipmentDefinition> ItemDef);
+
 protected:
 #if UE_WITH_IRIS
 	/** Register all replication fragments */
@@ -71,4 +75,8 @@ private:
 
 	UPROPERTY(Replicated)
 	TArray<TObjectPtr<AActor>> SpawnedActors;
+
+	// The equipment class that got equipped
+	UPROPERTY(Replicated)
+	TSubclassOf<ULyraEquipmentDefinition> EquipmentDefinition;
 };

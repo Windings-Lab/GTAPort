@@ -10,9 +10,20 @@ class ULyraInventoryItemDefinition;
  * 
  */
 UCLASS()
-class LYRAGAME_API ULyraInventoryItemInstanceData : public UObject
+class LYRAGAME_API ULyraInventoryItemInstanceData : public UActorComponent
 {
 	GENERATED_BODY()
+
+public:
+	ULyraInventoryItemInstanceData();
+
+protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+private:
+	UFUNCTION()
+	void OnRep_ItemCount();
+	AActor* GetOwningActor() const;
 
 public:
 	UPROPERTY(Replicated)
@@ -21,11 +32,8 @@ public:
 	UPROPERTY(Replicated)
 	TSubclassOf<ULyraInventoryItemDefinition> ItemDef;
 
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(ReplicatedUsing=OnRep_ItemCount, VisibleAnywhere, BlueprintReadOnly)
 	int32 ItemCount;
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 LastItemCount;
-
-protected:
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

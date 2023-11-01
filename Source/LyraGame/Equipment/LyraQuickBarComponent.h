@@ -26,9 +26,6 @@ public:
 	void TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void OnTransferSlotsFinished(const UWorld* World, FSlotChangedMessage Message);
-
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void DeleteFromIndex(int32 Index) ;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
@@ -51,13 +48,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure=false)
 	int32 GetNextFreeItemSlot() const;
-
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	void AddItemToSlot(int32 SlotIndex, ULyraInventoryItemInstance* Item);
-
-	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-	ULyraInventoryItemInstance* RemoveItemFromSlot(int32 SlotIndex);
-
+	
 	virtual void BeginPlay() override;
 
 private:
@@ -71,13 +62,10 @@ protected:
 	int32 NumSlots = 4;
 
 	UFUNCTION()
-	void OnRep_Slots();
-
-	UFUNCTION()
 	void OnRep_ActiveSlotIndex();
 
 private:
-	UPROPERTY(ReplicatedUsing=OnRep_Slots)
+	UPROPERTY(Replicated)
 	TArray<TObjectPtr<ULyraInventoryItemInstance>> Slots;
 
 	UPROPERTY(ReplicatedUsing=OnRep_ActiveSlotIndex)

@@ -71,7 +71,6 @@ void AGTACharacter::AddInitialInventory()
 	}
 
 	QuickBar->SetActiveSlotIndex(0);
-	OnInitialUnarmed();
 }
 
 void AGTACharacter::OnAbilitySystemInitialized()
@@ -140,5 +139,14 @@ void AGTACharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComponent
 		{
 			//WaterLogicComponent->SetSwimming(false);
 		}
+	}
+}
+
+void AGTACharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	if(!HasAuthority())
+	{
+		OnInitialUnarmed();
 	}
 }

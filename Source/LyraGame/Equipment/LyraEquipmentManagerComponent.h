@@ -34,10 +34,6 @@ private:
 	friend FLyraEquipmentList;
 	friend ULyraEquipmentManagerComponent;
 
-	// The equipment class that got equipped
-	UPROPERTY()
-	TSubclassOf<ULyraEquipmentDefinition> EquipmentDefinition;
-
 	UPROPERTY()
 	TObjectPtr<ULyraEquipmentInstance> Instance = nullptr;
 

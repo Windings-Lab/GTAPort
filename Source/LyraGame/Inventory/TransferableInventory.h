@@ -47,16 +47,11 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
 	virtual void TransferSlots_Implementation(UObject* WorldContextObject, FTransferInventoryData Data);
-
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void OnTransferSlotsFinished(const UWorld* World, FSlotChangedMessage Message);
-	virtual void OnTransferSlotsFinished_Implementation(const UWorld* World, FSlotChangedMessage Message);
-
+	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	TArray<ULyraInventoryItemInstance*> GetAllItems();
 	virtual TArray<ULyraInventoryItemInstance*> GetAllItems_Implementation();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void DeleteFromIndex(int32 Index);
-	virtual void DeleteFromIndex_Implementation(int32 Index);
 };
