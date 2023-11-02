@@ -6,6 +6,8 @@
 
 #include "LyraInventoryItemInstance.generated.h"
 
+class ULyraInventoryTileWidget;
+class UInventoryTileWidget;
 class ULyraInventoryItemInstanceData;
 class ULyraInventoryItemInstance;
 class FLifetimeProperty;
@@ -19,9 +21,7 @@ USTRUCT(BlueprintType)
 struct FSlotChangedMessage
 {
 	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite)
-	int32 Index = -1;
+	
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<ULyraInventoryItemInstance> Item = nullptr;
 	UPROPERTY(BlueprintReadWrite)
@@ -32,7 +32,7 @@ struct FSlotChangedMessage
  * ULyraInventoryItemInstance
  */
 UCLASS(BlueprintType)
-class ULyraInventoryItemInstance : public UActorComponent
+class LYRAGAME_API ULyraInventoryItemInstance : public UActorComponent
 {
 	GENERATED_BODY()
 
@@ -57,6 +57,11 @@ public:
 	void DestroyData();
 	UFUNCTION(Client, Reliable)
 	void PreDestroyData();
+
+	void SetWidget(ULyraInventoryTileWidget* InWidget);
+
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void SpawnPickUpItem(TSubclassOf<AActor> Class);
 
 	// Adds a specified number of stacks to the tag (does nothing if StackCount is below 1)
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category=Inventory)
@@ -124,5 +129,5 @@ private:
 	int32 Index = -1;
 
 	UPROPERTY(BlueprintReadWrite, meta=(AllowPrivateAccess))
-	TObjectPtr<UUserWidget> AttachedWidget = nullptr;
+	TObjectPtr<ULyraInventoryTileWidget> AttachedWidget = nullptr;
 };

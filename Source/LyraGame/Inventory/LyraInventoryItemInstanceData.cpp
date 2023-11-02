@@ -19,7 +19,6 @@ void ULyraInventoryItemInstanceData::OnRep_ItemCount()
 	{
 		ULyraInventoryItemInstance* Instance = GetTypedOuter<ULyraInventoryItemInstance>();
 		FSlotChangedMessage Message;
-		Message.Index = Instance->Index;
 		Message.Item = Instance;
 		Message.DeltaCount = ItemCount - LastItemCount;
 		LastItemCount = ItemCount;

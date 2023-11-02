@@ -23,7 +23,7 @@ public:
 	ULyraQuickBarComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
+	void TransferSlots(FTransferInventoryData Data);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void DeleteFromIndex(int32 Index) ;
@@ -48,12 +48,14 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure=false)
 	int32 GetNextFreeItemSlot() const;
-	
-	virtual void BeginPlay() override;
+
+	void AddEmptySlots();
 
 private:
 	void UnequipItemInSlot();
 	void EquipItemInSlot();
+
+	bool CheckActiveSlot();
 
 	ULyraEquipmentManagerComponent* FindEquipmentManager() const;
 

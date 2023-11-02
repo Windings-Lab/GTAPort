@@ -119,7 +119,7 @@ public:
 	ULyraInventoryItemInstance* ChangeInventorySlot(TSubclassOf<ULyraInventoryItemDefinition> ItemDef, int32 StackCount = 1);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
-	void TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
+	void TransferSlots(FTransferInventoryData Data);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
 	TArray<ULyraInventoryItemInstance*> GetAllItems();

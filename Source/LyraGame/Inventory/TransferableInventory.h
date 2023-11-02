@@ -25,6 +25,8 @@ struct FTransferInventoryData
 	int32 DestIndex = -1;
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<ULyraInventoryItemInstance> DestItem = nullptr;
+
+	bool bTransferred = false;
 };
 
 
@@ -45,8 +47,8 @@ class LYRAGAME_API ITransferableInventory
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void TransferSlots(UObject* WorldContextObject, FTransferInventoryData Data);
-	virtual void TransferSlots_Implementation(UObject* WorldContextObject, FTransferInventoryData Data);
+	void TransferSlots(FTransferInventoryData Data);
+	virtual void TransferSlots_Implementation(FTransferInventoryData Data);
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	TArray<ULyraInventoryItemInstance*> GetAllItems();

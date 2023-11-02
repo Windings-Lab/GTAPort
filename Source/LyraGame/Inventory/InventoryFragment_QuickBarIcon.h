@@ -10,7 +10,7 @@
 class UObject;
 
 UCLASS()
-class UInventoryFragment_QuickBarIcon : public ULyraInventoryItemFragment
+class LYRAGAME_API UInventoryFragment_QuickBarIcon : public ULyraInventoryItemFragment
 {
 	GENERATED_BODY()
 

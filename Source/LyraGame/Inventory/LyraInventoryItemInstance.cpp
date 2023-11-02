@@ -11,6 +11,7 @@
 
 #include "LyraGameplayTags.h"
 #include "LyraInventoryItemInstanceData.h"
+#include "LyraInventoryTileWidget.h"
 #include "GameFramework/GameplayMessageSubsystem.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(LyraInventoryItemInstance)
@@ -57,7 +58,6 @@ void ULyraInventoryItemInstance::PreDestroyData_Implementation()
 {
 	Data->ItemCount = 0;
 	FSlotChangedMessage Message;
-	Message.Index = Index;
 	Message.Item = this;
 	Message.DeltaCount = 0 - Data->LastItemCount;
 	UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(GetWorld());
@@ -95,6 +95,26 @@ void ULyraInventoryItemInstance::RegisterReplicationFragments(UE::Net::FFragment
 	FReplicationFragmentUtil::CreateAndRegisterFragmentsForObject(this, Context, RegistrationFlags);
 }
 #endif // UE_WITH_IRIS
+
+void ULyraInventoryItemInstance::SetWidget(ULyraInventoryTileWidget* InWidget)
+{
+	AttachedWidget = InWidget;
+}
+
+void ULyraInventoryItemInstance::SpawnPickUpItem_Implementation(TSubclassOf<AActor> Class)
+{
+	auto* PlayerController = GetOwner<APlayerController>();
+	auto* Pawn = PlayerController->GetPawn();
+	FTransform Transform = Pawn->GetActorTransform();
+
+	FVector SpawnOffset = Transform.GetLocation() + (Pawn->GetActorForwardVector() * 100.f);
+	FTransform NewTransform = FTransform(Transform.GetRotation(), SpawnOffset);
+
+	FActorSpawnParameters ActorSpawnParameters;
+	ActorSpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	ActorSpawnParameters.TransformScaleMethod = ESpawnActorScaleMethod::MultiplyWithRoot;
+	GetWorld()->SpawnActor(Class, &NewTransform, ActorSpawnParameters);
+}
 
 void ULyraInventoryItemInstance::AddStatTagStack(FGameplayTag Tag, int32 StackCount)
 {
@@ -140,14 +160,8 @@ void ULyraInventoryItemInstance::SetItemDef_Implementation(TSubclassOf<ULyraInve
 
 void ULyraInventoryItemInstance::OnRep_Data()
 {
-	if(!Data) return;
-	
-	FSlotChangedMessage Message;
-	Message.Index = Index;
-	Message.Item = this;
-	Data->LastItemCount = Data->ItemCount;
-	UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(GetWorld());
-	MessageSystem.BroadcastMessage(LyraGameplayTags::TAG_Lyra_Inventory_Message_SlotChanged, Message);
+	if(!AttachedWidget) return;
+	AttachedWidget->UpdateWidget(this);
 }
 
 const ULyraInventoryItemFragment* ULyraInventoryItemInstance::FindFragmentByClassConst(TSubclassOf<ULyraInventoryItemFragment> FragmentClass) const

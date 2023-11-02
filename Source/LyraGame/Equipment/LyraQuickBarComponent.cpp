@@ -2,7 +2,6 @@
 
 #include "LyraQuickBarComponent.h"
 
-#include "LyraGameplayTags.h"
 #include "Equipment/LyraEquipmentDefinition.h"
 #include "Equipment/LyraEquipmentInstance.h"
 #include "Equipment/LyraEquipmentManagerComponent.h"
@@ -26,10 +25,12 @@ ULyraQuickBarComponent::ULyraQuickBarComponent(const FObjectInitializer& ObjectI
 	SetIsReplicatedByDefault(true);
 }
 
-void ULyraQuickBarComponent::TransferSlots_Implementation(UObject* WorldContextObject, FTransferInventoryData Data)
+void ULyraQuickBarComponent::TransferSlots_Implementation(FTransferInventoryData Data)
 {
 	if(Data.SourceIndex == Data.DestIndex && Data.SourceInventory == this) return;
-	ITransferableInventory::TransferSlots_Implementation(WorldContextObject, Data);
+	ITransferableInventory::TransferSlots_Implementation(Data);
+
+	SetActiveSlotIndex(ActiveSlotIndex);
 }
 
 void ULyraQuickBarComponent::DeleteFromIndex_Implementation(int32 Index)
@@ -37,17 +38,14 @@ void ULyraQuickBarComponent::DeleteFromIndex_Implementation(int32 Index)
 	auto Instance = Slots[Index];
 	
 	if(Instance->IsEmpty()) return;
-	Instance->SetItemCount(Instance->GetItemCount() - 1);
-	if(Instance->GetItemCount() <= 0)
+	const int32 NewCount = Instance->GetItemCount() - 1;
+	Instance->SetItemCount(NewCount);
+	if(NewCount <= 0)
 	{
 		Instance->DestroyData();
 	}
 	
-	if(Index == ActiveSlotIndex && Instance->IsEmpty())
-	{
-		ActiveSlotIndex = -1;
-		SetActiveSlotIndex(Index);
-	}
+	SetActiveSlotIndex(ActiveSlotIndex);
 }
 
 TArray<ULyraInventoryItemInstance*> ULyraQuickBarComponent::GetAllItems_Implementation()
@@ -62,21 +60,6 @@ void ULyraQuickBarComponent::GetLifetimeReplicatedProps(TArray< FLifetimePropert
 	DOREPLIFETIME(ThisClass, Slots);
 	DOREPLIFETIME(ThisClass, ActiveSlotIndex);
 }
-
-void ULyraQuickBarComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	if(!HasAuthority()) return;
-	
-	for(int i = 0; i < NumSlots; i++)
-	{
-		auto& Slot = Slots.AddDefaulted_GetRef();
-		Slot = NewObject<ULyraInventoryItemInstance>(this);
-	}
-}
-
-
 
 void ULyraQuickBarComponent::CycleActiveSlotForward()
 {
@@ -143,6 +126,23 @@ void ULyraQuickBarComponent::EquipItemInSlot()
 	}
 }
 
+bool ULyraQuickBarComponent::CheckActiveSlot()
+{
+	if (ULyraInventoryItemInstance* SlotItem = Slots[ActiveSlotIndex])
+	{
+		if (const UInventoryFragment_EquippableItem* EquipInfo = SlotItem->FindFragmentByClass<UInventoryFragment_EquippableItem>())
+		{
+			TSubclassOf<ULyraEquipmentDefinition> EquipDef = EquipInfo->EquipmentDefinition;
+			if((EquippedItem && EquippedItem->GetItemDef() == EquipDef) || (EquippedItem == nullptr && EquipDef == nullptr))
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 void ULyraQuickBarComponent::UnequipItemInSlot()
 {
 	if (ULyraEquipmentManagerComponent* EquipmentManager = FindEquipmentManager())
@@ -169,7 +169,9 @@ ULyraEquipmentManagerComponent* ULyraQuickBarComponent::FindEquipmentManager() c
 
 void ULyraQuickBarComponent::SetActiveSlotIndex_Implementation(int32 NewIndex)
 {
-	if (Slots.IsValidIndex(NewIndex))
+	if(!Slots.IsValidIndex(NewIndex)) return;
+	
+	if (ActiveSlotIndex != NewIndex || !CheckActiveSlot())
 	{
 		UnequipItemInSlot();
 
@@ -199,6 +201,15 @@ int32 ULyraQuickBarComponent::GetNextFreeItemSlot() const
 	}
 
 	return INDEX_NONE;
+}
+
+void ULyraQuickBarComponent::AddEmptySlots()
+{
+	for(int i = 0; i < NumSlots; i++)
+	{
+		auto& Slot = Slots.AddDefaulted_GetRef();
+		Slot = NewObject<ULyraInventoryItemInstance>(this);
+	}
 }
 
 void ULyraQuickBarComponent::OnRep_ActiveSlotIndex()

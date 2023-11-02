@@ -224,10 +224,11 @@ ULyraInventoryItemInstance* ULyraInventoryManagerComponent::ChangeInventorySlot(
 	return Result;
 }
 
-void ULyraInventoryManagerComponent::TransferSlots_Implementation(UObject* WorldContextObject, FTransferInventoryData Data)
+void ULyraInventoryManagerComponent::TransferSlots_Implementation(FTransferInventoryData Data)
 {
 	if(Data.SourceIndex == Data.DestIndex && Data.SourceInventory == this) return;
-	ITransferableInventory::TransferSlots_Implementation(WorldContextObject, Data);
+	
+	ITransferableInventory::TransferSlots_Implementation(Data);
 }
 
 TArray<ULyraInventoryItemInstance*> ULyraInventoryManagerComponent::GetAllItems_Implementation()

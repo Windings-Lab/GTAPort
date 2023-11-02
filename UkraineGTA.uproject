@@ -11,7 +11,8 @@
 			"AdditionalDependencies": [
 				"DeveloperSettings",
 				"Engine",
-				"CoreUObject"
+				"CoreUObject",
+				"UMG"
 			]
 		},
 		{
