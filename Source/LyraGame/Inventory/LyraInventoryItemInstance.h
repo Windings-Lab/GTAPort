@@ -44,16 +44,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category=Inventory)
 	int32 GetItemCount() const;
-
-	UFUNCTION(Server, Reliable)
+	
 	void SetItemCount(int32 Value);
 
 	UFUNCTION(BlueprintCallable, Category=Inventory)
 	bool IsStackable() const;
-
-	UFUNCTION(Server, Reliable)
+	
 	void CreateNewData(TSubclassOf<ULyraInventoryItemDefinition> InDef, int32 StackCount);
-	UFUNCTION(Server, Reliable)
 	void DestroyData();
 	UFUNCTION(Client, Reliable)
 	void PreDestroyData();
@@ -99,8 +96,7 @@ public:
 	{
 		return (ResultClass*)this->FindFragmentByClass(ResultClass::StaticClass());
 	}
-
-	UFUNCTION(Server, Reliable)
+	
 	void Swap(ULyraInventoryItemInstance* Other);
 
 protected:

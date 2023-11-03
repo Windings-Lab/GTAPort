@@ -24,10 +24,19 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void TransferSlots(FTransferInventoryData Data);
+private:
+	UFUNCTION(Server, Reliable)
+	void Server_TransferSlots(FTransferInventoryData Data);
 
+public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void DeleteFromIndex(int32 Index) ;
+	void DeleteFromIndex(int32 Index);
 
+private:
+	UFUNCTION(Server, Reliable)
+	void Server_DeleteFromIndex(int32 Index);
+
+public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	TArray<ULyraInventoryItemInstance*> GetAllItems();
 

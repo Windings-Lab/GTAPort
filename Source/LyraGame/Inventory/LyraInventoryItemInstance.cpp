@@ -35,7 +35,7 @@ int32 ULyraInventoryItemInstance::GetItemCount() const
 	return Data->ItemCount;
 }
 
-void ULyraInventoryItemInstance::SetItemCount_Implementation(int32 Value)
+void ULyraInventoryItemInstance::SetItemCount(int32 Value)
 {
 	if(!Data) return;
 	Data->ItemCount = Value;
@@ -46,7 +46,7 @@ bool ULyraInventoryItemInstance::IsStackable() const
 	return IsEmpty() ? false : Data->ItemDef.GetDefaultObject()->bStackable;
 }
 
-void ULyraInventoryItemInstance::CreateNewData_Implementation(TSubclassOf<ULyraInventoryItemDefinition> InDef,
+void ULyraInventoryItemInstance::CreateNewData(TSubclassOf<ULyraInventoryItemDefinition> InDef,
 	int32 StackCount)
 {
 	Data = NewObject<ULyraInventoryItemInstanceData>(this);
@@ -64,14 +64,14 @@ void ULyraInventoryItemInstance::PreDestroyData_Implementation()
 	MessageSystem.BroadcastMessage(LyraGameplayTags::TAG_Lyra_Inventory_Message_SlotChanged, Message);
 }
 
-void ULyraInventoryItemInstance::DestroyData_Implementation()
+void ULyraInventoryItemInstance::DestroyData()
 {
 	PreDestroyData();
 	Data->DestroyComponent();
 	Data = nullptr;
 }
 
-void ULyraInventoryItemInstance::Swap_Implementation(ULyraInventoryItemInstance* Other)
+void ULyraInventoryItemInstance::Swap(ULyraInventoryItemInstance* Other)
 {
 	const auto TempData = Data;
 	Data = Other->Data;

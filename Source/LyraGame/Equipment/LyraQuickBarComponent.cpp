@@ -28,12 +28,25 @@ ULyraQuickBarComponent::ULyraQuickBarComponent(const FObjectInitializer& ObjectI
 void ULyraQuickBarComponent::TransferSlots_Implementation(FTransferInventoryData Data)
 {
 	if(Data.SourceIndex == Data.DestIndex && Data.SourceInventory == this) return;
+	Server_TransferSlots(Data);
+}
+
+void ULyraQuickBarComponent::Server_TransferSlots_Implementation(FTransferInventoryData Data)
+{
 	ITransferableInventory::TransferSlots_Implementation(Data);
 
-	SetActiveSlotIndex(ActiveSlotIndex);
+	if(!CheckActiveSlot())
+	{
+		SetActiveSlotIndex(ActiveSlotIndex);
+	}
 }
 
 void ULyraQuickBarComponent::DeleteFromIndex_Implementation(int32 Index)
+{
+	Server_DeleteFromIndex(Index);
+}
+
+void ULyraQuickBarComponent::Server_DeleteFromIndex_Implementation(int32 Index)
 {
 	auto Instance = Slots[Index];
 	
@@ -43,9 +56,11 @@ void ULyraQuickBarComponent::DeleteFromIndex_Implementation(int32 Index)
 	if(NewCount <= 0)
 	{
 		Instance->DestroyData();
+		if(Index == ActiveSlotIndex)
+		{
+			SetActiveSlotIndex(ActiveSlotIndex);
+		}
 	}
-	
-	SetActiveSlotIndex(ActiveSlotIndex);
 }
 
 TArray<ULyraInventoryItemInstance*> ULyraQuickBarComponent::GetAllItems_Implementation()
@@ -147,9 +162,12 @@ void ULyraQuickBarComponent::UnequipItemInSlot()
 {
 	if (ULyraEquipmentManagerComponent* EquipmentManager = FindEquipmentManager())
 	{
-		if (EquippedItem != nullptr)
+		if (EquippedItem)
 		{
-			EquipmentManager->UnequipItem(EquippedItem);
+			if(IsValid(EquippedItem->GetOuter()))
+			{
+				EquipmentManager->UnequipItem(EquippedItem);
+			}
 			EquippedItem = nullptr;
 		}
 	}
@@ -171,16 +189,13 @@ void ULyraQuickBarComponent::SetActiveSlotIndex_Implementation(int32 NewIndex)
 {
 	if(!Slots.IsValidIndex(NewIndex)) return;
 	
-	if (ActiveSlotIndex != NewIndex || !CheckActiveSlot())
-	{
-		UnequipItemInSlot();
+	UnequipItemInSlot();
 
-		ActiveSlotIndex = NewIndex;
+	ActiveSlotIndex = NewIndex;
 
-		EquipItemInSlot();
+	EquipItemInSlot();
 
-		OnRep_ActiveSlotIndex();
-	}
+	OnRep_ActiveSlotIndex();
 }
 
 ULyraInventoryItemInstance* ULyraQuickBarComponent::GetActiveSlotItem() const

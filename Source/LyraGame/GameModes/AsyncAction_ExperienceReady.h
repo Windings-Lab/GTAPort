@@ -18,7 +18,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FExperienceReadyAsyncDelegate);
  * immediately if the game state is valid already.
  */
 UCLASS()
-class UAsyncAction_ExperienceReady : public UBlueprintAsyncActionBase
+class LYRAGAME_API UAsyncAction_ExperienceReady : public UBlueprintAsyncActionBase
 {
 	GENERATED_UCLASS_BODY()
 

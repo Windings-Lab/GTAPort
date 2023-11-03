@@ -12,8 +12,6 @@
 #include "Character/Components/WaterLogicComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
-#include "Equipment/LyraQuickBarComponent.h"
-#include "Inventory/LyraInventoryManagerComponent.h"
 
 AGTACharacter::AGTACharacter()
 {
@@ -54,23 +52,6 @@ bool AGTACharacter::IsTouchingGroundInWater() const
 bool AGTACharacter::IsUnderWater() const
 {
 	return WaterLogicComponent->IsUnderWater();
-}
-
-void AGTACharacter::AddInitialInventory()
-{
-	if(!HasAuthority()) return;
-	
-	auto* Inventory = Controller->GetComponentByClass<ULyraInventoryManagerComponent>();
-	auto* QuickBar = Controller->GetComponentByClass<ULyraQuickBarComponent>();
-	if(!Inventory || !QuickBar) return;
-
-	Inventory->AddEmptySlots(14);
-	for(int slotIndex = 0; slotIndex < InitialInventoryItems.Num(); slotIndex++)
-	{
-		Inventory->ChangeInventorySlot(InitialInventoryItems[slotIndex], 1);
-	}
-
-	QuickBar->SetActiveSlotIndex(0);
 }
 
 void AGTACharacter::OnAbilitySystemInitialized()
@@ -142,11 +123,3 @@ void AGTACharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComponent
 	}
 }
 
-void AGTACharacter::BeginPlay()
-{
-	Super::BeginPlay();
-	if(!HasAuthority())
-	{
-		OnInitialUnarmed();
-	}
-}

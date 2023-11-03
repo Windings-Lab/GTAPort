@@ -227,7 +227,11 @@ ULyraInventoryItemInstance* ULyraInventoryManagerComponent::ChangeInventorySlot(
 void ULyraInventoryManagerComponent::TransferSlots_Implementation(FTransferInventoryData Data)
 {
 	if(Data.SourceIndex == Data.DestIndex && Data.SourceInventory == this) return;
-	
+	Server_TransferSlots(Data);
+}
+
+void ULyraInventoryManagerComponent::Server_TransferSlots_Implementation(FTransferInventoryData Data)
+{
 	ITransferableInventory::TransferSlots_Implementation(Data);
 }
 

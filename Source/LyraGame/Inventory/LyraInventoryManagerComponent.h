@@ -120,15 +120,21 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
 	void TransferSlots(FTransferInventoryData Data);
+private:
+	UFUNCTION(Server, Reliable)
+	void Server_TransferSlots(FTransferInventoryData Data);
 
+public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
 	TArray<ULyraInventoryItemInstance*> GetAllItems();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category=Inventory)
 	void DeleteFromIndex(int32 Index);
+private:
 	UFUNCTION(Server, Reliable)
 	void Server_DeleteFromIndex(int32 Index);
 
+public:
 	UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category=Inventory)
 	void AddEmptySlots(int32 Size);
 

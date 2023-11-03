@@ -30,12 +30,6 @@ public:
 		virtual bool IsUnderWater() const override;
 	//~End of ICanSwim Interface
 
-	UFUNCTION(BlueprintCallable)
-	void AddInitialInventory();
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnInitialUnarmed();
-
 protected:
 	virtual void OnAbilitySystemInitialized() override;
 	virtual void OnAbilitySystemUninitialized() override;
@@ -52,8 +46,6 @@ protected:
 		, AActor* OtherActor
 		, UPrimitiveComponent* OtherComp
 		, int32 OtherBodyIndex);
-
-	virtual void BeginPlay() override;
 	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
@@ -81,7 +73,4 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GTA|Character", Meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UBuoyancyComponent> BuoyancyComponent;
 	//~End of Water Logic
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GTA|Character|Inventory", Meta = (AllowPrivateAccess = "true"))
-	TArray<TSubclassOf<ULyraInventoryItemDefinition>> InitialInventoryItems;
 };
