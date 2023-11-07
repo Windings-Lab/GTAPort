@@ -75,7 +75,7 @@ void AHelicopterPawn::OnVehicleEnter_Implementation(AActor* CarInstigator, ULyra
 
 void AHelicopterPawn::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
 {
-	Controller = nullptr;
+
 }
 
 void AHelicopterPawn::Tick(float DeltaTime)
@@ -164,7 +164,11 @@ float AHelicopterPawn::GetUpForce()
 
 void AHelicopterPawn::PrintVariables()
 {
-	if(!VehicleExtensionComponent->Entered()) return;
+	if(Controller)
+	{
+		if(Controller->GetLocalRole() != ROLE_AutonomousProxy) return;
+	}
+	else return;
 
 	UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("Blade Speed: %f"), CurrentBladeRotationSpeed)
 	, true, false, FLinearColor::Green, 1.f, TEXT("CurrentBladeRotationSpeed"));
@@ -186,7 +190,7 @@ void AHelicopterPawn::Input_MoveUp(const FInputActionValue& InputActionValue)
 
 void AHelicopterPawn::UpdateBladeRotationSpeed(float DT)
 {
-	float BladeAcceleration = VehicleExtensionComponent->Entered() ? 200.f : -200.f;
+	float BladeAcceleration = Controller ? 200.f : -200.f;
 	CurrentBladeRotationSpeed += DT * BladeAcceleration;
 	CurrentBladeRotationSpeed = FMath::Clamp(CurrentBladeRotationSpeed, 0.f, MaxBladeRotationSpeed);
 	bBladesAtMaxSpeed = CurrentBladeRotationSpeed >= MaxBladeRotationSpeed;

@@ -8,10 +8,23 @@
 #include "Interfaces/Vehicle.h"
 #include "VehicleExtensionComponent.generated.h"
 
+class UInputAction;
 class ULyraCameraMode;
 class ULyraCameraComponent;
 class UInputMappingContext;
 class ULyraInputConfig;
+
+namespace Vehicle
+{
+	UENUM()
+	enum EPawnType
+	{
+		None,
+		Driver,
+		Passenger
+	};
+}
+
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class GTAVEHICLESRUNTIME_API UVehicleExtensionComponent : public UActorComponent, public IVehicle
@@ -24,8 +37,6 @@ public:
 	void AddToNativeInputHandle(int32 Handle);
 	const ULyraInputConfig* GetInputConfig() const;
 
-	bool Entered() const;
-
 	FInteractionOption& GetInteractionOption();
 
 public:
@@ -37,16 +48,22 @@ protected:
 
 protected:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void OnVehicleEnter(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC);
+	void OnVehicleEnter(AActor* InInstigator, ULyraAbilitySystemComponent* InLyraASC);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void OnVehicleExit(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC);
+	void OnVehicleExit(AActor* InInstigator, ULyraAbilitySystemComponent* InLyraASC);
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
 	void Input_AbilityInputTagPressed(FGameplayTag InputTag);
 	void Input_AbilityInputTagReleased(FGameplayTag InputTag);
 
 	TSubclassOf<ULyraCameraMode> DetermineCameraMode() const;
-	void SetEnteredPawnHidden(bool Value);
+	void SetPawnHidden(APawn* Pawn, bool Value);
+	
+	void SetAbilities(APawn* Pawn, bool Value);
+	void SetInputs(APawn* Pawn, bool Value);
+	void SetAttachments(APawn* Pawn, bool Value);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="GTA|Vehicle")
@@ -56,7 +73,7 @@ protected:
 	TObjectPtr<ULyraInputConfig> InputConfig;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="GTA|Vehicle")
-	TObjectPtr<UInputMappingContext> MappingContext;
+	TObjectPtr<UInputMappingContext> DriverMappingContext;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Camera")
 	TSubclassOf<ULyraCameraMode> CameraMode;
@@ -65,8 +82,24 @@ protected:
 	FInteractionOption Option;
 
 private:
+	Vehicle::EPawnType PawnType;
+	FVector EnteredRelativePosition;
+	
 	FLyraAbilitySet_GrantedHandles LoadedAbilitySetHandles;
 	TArray<uint32> LoadedBindHandles;
-	TWeakObjectPtr<APawn> EnteredPawn;
-	bool bEntered;
+
+	UPROPERTY(Replicated)
+	TObjectPtr<APawn> Driver;
+
+	UPROPERTY(Replicated)
+	TObjectPtr<APawn> Passenger;
+	
+	UPROPERTY()
+	TObjectPtr<ULyraAbilitySystemComponent> LyraASC;
+
+	UPROPERTY()
+	TObjectPtr<UInputAction> VehicleExitInput;
+
+	UPROPERTY()
+	TObjectPtr<UInputMappingContext> PassengerMappingContext;
 };

@@ -73,5 +73,5 @@ void AWaterVehiclePawn::OnVehicleEnter_Implementation(AActor* CarInstigator, ULy
 
 void AWaterVehiclePawn::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
 {
-	Controller = nullptr;
+
 }

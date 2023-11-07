@@ -172,7 +172,12 @@ void AAircraftPawn::UpdateRoll(float DeltaSeconds)
 
 void AAircraftPawn::PrintVariables()
 {
-	if(!VehicleExtensionComponent->Entered()) return;
+	if(Controller)
+	{
+		if(Controller->GetLocalRole() != ROLE_AutonomousProxy) return;
+	}
+	else return;
+	
 	UKismetSystemLibrary::PrintString(GetWorld(), FString::Printf(TEXT("ThrustSpeed: %f"), ThrustSpeed)
 		, true, false, FLinearColor::Green, 1.f, TEXT("ThrustSpeed"));
 
@@ -216,5 +221,5 @@ void AAircraftPawn::OnVehicleEnter_Implementation(AActor* CarInstigator, ULyraAb
 
 void AAircraftPawn::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
 {
-	Controller = nullptr;
+
 }

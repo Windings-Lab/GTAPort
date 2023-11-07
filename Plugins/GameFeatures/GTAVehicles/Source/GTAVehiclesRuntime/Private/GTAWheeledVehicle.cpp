@@ -45,7 +45,6 @@ void AGTAWheeledVehicle::CustomizeInteractionEventData(const FGameplayTag& Inter
 
 void AGTAWheeledVehicle::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
 {
-	Controller = nullptr;
 }
 
 void AGTAWheeledVehicle::Input_Move(const FInputActionValue& InputActionValue)
