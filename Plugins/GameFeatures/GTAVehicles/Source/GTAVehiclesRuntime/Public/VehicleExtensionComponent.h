@@ -39,6 +39,8 @@ public:
 
 	FInteractionOption& GetInteractionOption();
 
+	bool DriverEntered() const;
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<ULyraCameraComponent> CameraComponent;

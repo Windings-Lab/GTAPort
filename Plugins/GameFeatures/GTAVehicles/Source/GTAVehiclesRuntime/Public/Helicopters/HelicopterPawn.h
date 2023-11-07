@@ -34,20 +34,34 @@ protected:
 	void OnVehicleExit(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC);
 	
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 private:
 	void Input_MoveUp(const FInputActionValue& InputActionValue);
+	UFUNCTION(Server, Reliable)
+	void Server_Input_MoveUp(float InputValue);
+	
 	void UpdateBladeRotationSpeed(float DT);
 	void UpdateForceVector(float DT);
 	void AddLinearForce(float DT);
 	
 	void Input_Yaw(const FInputActionValue& InputActionValue);
+	UFUNCTION(Server, Reliable)
+	void Server_Input_Yaw(float InputValue);
+	
 	void UpdateYaw(float CurrentTurnSpeed, float DT);
 	
 	void Input_Pitch(const FInputActionValue& InputActionValue);
+	UFUNCTION(Server, Reliable)
+	void Server_Input_Pitch(float InputValue);
+	
 	void UpdatePitch(float CurrentTurnSpeed, float DT);
 	
 	void Input_Roll(const FInputActionValue& InputActionValue);
+	UFUNCTION(Server, Reliable)
+	void Server_Input_Roll(float InputValue);
+	
 	void UpdateRoll(float CurrentTurnSpeed, float DT);
 	
 	float GetTurnSpeed();
@@ -72,8 +86,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
 	FVector CurrentYaw;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
-	float TargetYaw;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	float YawInput;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
 	FVector CurrentPitch;
@@ -81,8 +95,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
 	float CurrentPitchAngle;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
-	float TargetPitch;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	float PitchInput;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
 	FVector CurrentRoll;
@@ -90,14 +104,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
 	float CurrentRollAngle;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
-	float TargetRoll;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	float RollInput;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
 	float CurrentThrottle;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
-	float TargetThrottle;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category="Dynamic Variables")
+	float ThrottleInput;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Constants")
 	float MaxBladeRotationSpeed;

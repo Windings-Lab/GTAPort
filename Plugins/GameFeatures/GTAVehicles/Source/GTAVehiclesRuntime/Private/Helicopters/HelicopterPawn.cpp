@@ -9,6 +9,7 @@
 #include "Camera/LyraCameraMode.h"
 #include "Input/LyraInputComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Net/UnrealNetwork.h"
 
 AHelicopterPawn::AHelicopterPawn()
 {
@@ -44,32 +45,32 @@ void AHelicopterPawn::CustomizeInteractionEventData(const FGameplayTag& Interact
 
 void AHelicopterPawn::OnVehicleEnter_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
 {
-	if(ULyraInputComponent* LyraIC = Cast<ULyraInputComponent>(CarInstigator->InputComponent))
+	ULyraInputComponent* LyraIC = Cast<ULyraInputComponent>(CarInstigator->InputComponent);
+	if(!LyraIC) return;
+	
+	const ULyraInputConfig* InputConfig = VehicleExtensionComponent->GetInputConfig();
+	if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Thrust, false))
 	{
-		const ULyraInputConfig* InputConfig = VehicleExtensionComponent->GetInputConfig();
-		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Thrust, false))
-		{
-			VehicleExtensionComponent->AddToNativeInputHandle(
-				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_MoveUp).GetHandle());
-		}
+		VehicleExtensionComponent->AddToNativeInputHandle(
+			LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_MoveUp).GetHandle());
+	}
 
-		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Yaw, false))
-		{
-			VehicleExtensionComponent->AddToNativeInputHandle(
-				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Yaw).GetHandle());
-		}
+	if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Yaw, false))
+	{
+		VehicleExtensionComponent->AddToNativeInputHandle(
+			LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Yaw).GetHandle());
+	}
 
-		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Pitch, false))
-		{
-			VehicleExtensionComponent->AddToNativeInputHandle(
-				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Pitch).GetHandle());
-		}
+	if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Pitch, false))
+	{
+		VehicleExtensionComponent->AddToNativeInputHandle(
+			LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Pitch).GetHandle());
+	}
 
-		if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Roll, false))
-		{
-			VehicleExtensionComponent->AddToNativeInputHandle(
-				LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Roll).GetHandle());
-		}
+	if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Roll, false))
+	{
+		VehicleExtensionComponent->AddToNativeInputHandle(
+			LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Roll).GetHandle());
 	}
 }
 
@@ -90,14 +91,30 @@ void AHelicopterPawn::Tick(float DeltaTime)
 	UpdatePitch(CurrentTurnSpeed, DeltaTime);
 	UpdateRoll(CurrentTurnSpeed, DeltaTime);
 
-	AddLinearForce(DeltaTime);
-	HelicopterMesh->AddTorqueInDegrees(CurrentYaw, NAME_None, true);
-	HelicopterMesh->AddTorqueInDegrees(CurrentPitch, NAME_None, true);
-	HelicopterMesh->AddTorqueInDegrees(CurrentRoll, NAME_None, true);
+	if(HasAuthority())
+	{
+		AddLinearForce(DeltaTime);
+		HelicopterMesh->AddTorqueInDegrees(CurrentYaw, NAME_None, true);
+		HelicopterMesh->AddTorqueInDegrees(CurrentPitch, NAME_None, true);
+		HelicopterMesh->AddTorqueInDegrees(CurrentRoll, NAME_None, true);
 
-	HelicopterMesh->SetPhysicsLinearVelocity(GetVelocity().GetClampedToMaxSize(MaxSpeed));
-	
-	PrintVariables();
+		HelicopterMesh->SetPhysicsLinearVelocity(GetVelocity().GetClampedToMaxSize(MaxSpeed));
+	}
+
+	if(!HasAuthority() || GetNetMode() == NM_Standalone)
+	{
+		PrintVariables();
+	}
+}
+
+void AHelicopterPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(ThisClass, PitchInput, COND_SimulatedOrPhysics);
+	DOREPLIFETIME_CONDITION(ThisClass, YawInput, COND_SimulatedOrPhysics);
+	DOREPLIFETIME_CONDITION(ThisClass, RollInput, COND_SimulatedOrPhysics);
+	DOREPLIFETIME_CONDITION(ThisClass, ThrottleInput, COND_SimulatedOrPhysics);
 }
 
 void AHelicopterPawn::UpdateForceVector(float DT)
@@ -111,12 +128,12 @@ void AHelicopterPawn::UpdateForceVector(float DT)
 	
 
 	ForceVector = Gravity;
-	ForceVector += GetUpForce() * UpVector * TargetThrottle;
+	ForceVector += GetUpForce() * UpVector * ThrottleInput;
 }
 
 void AHelicopterPawn::AddLinearForce(float DT)
 {
-	bool InputDetected = TargetThrottle || TargetRoll || TargetPitch;
+	bool InputDetected = ThrottleInput || RollInput || PitchInput;
 	if(bBladesAtMaxSpeed && !InputDetected)
 	{
 		FVector TargetVelocity = FMath::VInterpTo(GetVelocity(), FVector::ZeroVector, DT, 0.5f);
@@ -129,27 +146,27 @@ void AHelicopterPawn::AddLinearForce(float DT)
 
 void AHelicopterPawn::UpdateYaw(float CurrentTurnSpeed, float DT)
 {
-	CurrentYaw = GetActorUpVector() * (CurrentTurnSpeed * TargetYaw) * GetTurnSpeed();
+	CurrentYaw = GetActorUpVector() * (CurrentTurnSpeed * YawInput) * GetTurnSpeed();
 }
 
 void AHelicopterPawn::UpdatePitch(float CurrentTurnSpeed, float DT)
 {
 	FVector ForwardVector = GetActorForwardVector();
 	
-	CurrentPitchAngle = TargetPitch * 20.f + HelicopterMesh->GetComponentRotation().Pitch;
+	CurrentPitchAngle = PitchInput * 20.f + HelicopterMesh->GetComponentRotation().Pitch;
 	CurrentPitchAngle = FMath::Clamp(CurrentPitchAngle, -20.f, 20.f);
 	CurrentPitch = GetActorRightVector() * CurrentPitchAngle * CurrentTurnSpeed;
 	
-	ForceVector += GetUpForce() * ForwardVector * TargetPitch;
+	ForceVector += GetUpForce() * ForwardVector * PitchInput;
 }
 
 void AHelicopterPawn::UpdateRoll(float CurrentTurnSpeed, float DT)
 {
-	CurrentRollAngle = TargetRoll * 20.f + HelicopterMesh->GetComponentRotation().Roll;
+	CurrentRollAngle = RollInput * 20.f + HelicopterMesh->GetComponentRotation().Roll;
 	CurrentRollAngle = FMath::Clamp(CurrentRollAngle, -20.f, 20.f);
 	CurrentRoll = GetActorForwardVector() * CurrentRollAngle * CurrentTurnSpeed;
 	
-	ForceVector += GetUpForce() * GetActorRightVector() * -TargetRoll;
+	ForceVector += GetUpForce() * GetActorRightVector() * -RollInput;
 }
 
 float AHelicopterPawn::GetTurnSpeed()
@@ -181,35 +198,52 @@ void AHelicopterPawn::PrintVariables()
 	, true, false, FLinearColor::Green, 1.f, TEXT("HeliSpeed"));
 }
 
-void AHelicopterPawn::Input_MoveUp(const FInputActionValue& InputActionValue)
-{
-	float InputValue = InputActionValue.Get<float>();
-
-	TargetThrottle = InputValue;
-}
-
 void AHelicopterPawn::UpdateBladeRotationSpeed(float DT)
 {
-	float BladeAcceleration = Controller ? 200.f : -200.f;
+	const float BladeAcceleration = VehicleExtensionComponent->DriverEntered() ? 200.f : -200.f;
 	CurrentBladeRotationSpeed += DT * BladeAcceleration;
 	CurrentBladeRotationSpeed = FMath::Clamp(CurrentBladeRotationSpeed, 0.f, MaxBladeRotationSpeed);
 	bBladesAtMaxSpeed = CurrentBladeRotationSpeed >= MaxBladeRotationSpeed;
 	K2_OnRotateBlades(DT);
 }
 
+void AHelicopterPawn::Input_MoveUp(const FInputActionValue& InputActionValue)
+{
+	const float InputValue = InputActionValue.Get<float>();
+	Server_Input_MoveUp(InputValue);
+}
+void AHelicopterPawn::Server_Input_MoveUp_Implementation(float InputValue)
+{
+	ThrottleInput = InputValue;
+}
+
 void AHelicopterPawn::Input_Yaw(const FInputActionValue& InputActionValue)
 {
-	float InputValue = InputActionValue.Get<float>();
-	TargetYaw = InputValue;
+	const float InputValue = InputActionValue.Get<float>();
+	Server_Input_Yaw(InputValue);
 }
+void AHelicopterPawn::Server_Input_Yaw_Implementation(float InputValue)
+{
+	YawInput = InputValue;
+}
+
 void AHelicopterPawn::Input_Pitch(const FInputActionValue& InputActionValue)
 {
-	float InputValue = InputActionValue.Get<float>();
-	TargetPitch = InputValue;
+	const float InputValue = InputActionValue.Get<float>();
+	Server_Input_Pitch(InputValue);
 }
+void AHelicopterPawn::Server_Input_Pitch_Implementation(float InputValue)
+{
+	PitchInput = InputValue;
+}
+
 void AHelicopterPawn::Input_Roll(const FInputActionValue& InputActionValue)
 {
-	float Value = InputActionValue.Get<float>();
-	TargetRoll = Value;
+	const float InputValue = InputActionValue.Get<float>();
+	Server_Input_Roll(InputValue);
+}
+void AHelicopterPawn::Server_Input_Roll_Implementation(float InputValue)
+{
+	RollInput = InputValue;
 }
 

@@ -212,6 +212,11 @@ FInteractionOption& UVehicleExtensionComponent::GetInteractionOption()
 	return Option;
 }
 
+bool UVehicleExtensionComponent::DriverEntered() const
+{
+	return Driver != nullptr;
+}
+
 void UVehicleExtensionComponent::BeginPlay()
 {
 	Super::BeginPlay();
