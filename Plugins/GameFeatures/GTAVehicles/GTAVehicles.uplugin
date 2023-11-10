@@ -36,6 +36,10 @@
 		{
 			"Name": "CommonGame",
 			"Enabled": true
+		},
+		{
+			"Name": "GameplayAbilities",
+			"Enabled": true
 		}
 	]
 }

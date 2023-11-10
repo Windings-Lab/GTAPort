@@ -8,13 +8,17 @@
 #include "AbilitySystem/LyraAbilitySystemComponent.h"
 #include "Camera/LyraCameraComponent.h"
 #include "Camera/LyraCameraMode.h"
+#include "Character/LyraPawnExtensionComponent.h"
+#include "GameFramework/PawnMovementComponent.h"
 #include "Input/LyraInputComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Player/LyraLocalPlayer.h"
 
 UE_DEFINE_GAMEPLAY_TAG_STATIC(InputTag_Vehicle_Exit, "InputTag.Vehicle.Exit");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(Vehicle_PawnType_Driver, "Vehicle.PawnType.Driver");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(Vehicle_PawnType_Passenger, "Vehicle.PawnType.Passenger");
 
-UVehicleExtensionComponent::UVehicleExtensionComponent() : PawnType(Vehicle::None)
+UVehicleExtensionComponent::UVehicleExtensionComponent()
 {
 	SetIsReplicatedByDefault(true);
 
@@ -26,7 +30,17 @@ UVehicleExtensionComponent::UVehicleExtensionComponent() : PawnType(Vehicle::Non
 	PassengerMappingContext = PassengerMappingContextObj.Object;
 }
 
-void UVehicleExtensionComponent::SetAbilities(APawn* Pawn, bool Value)
+bool UVehicleExtensionComponent::IsDriver(ULyraAbilitySystemComponent* LyraASC)
+{
+	return LyraASC->HasMatchingGameplayTag(Vehicle_PawnType_Driver);
+}
+
+bool UVehicleExtensionComponent::IsPassenger(ULyraAbilitySystemComponent* LyraASC)
+{
+	return LyraASC->HasMatchingGameplayTag(Vehicle_PawnType_Passenger);
+}
+
+void UVehicleExtensionComponent::SetAbilities(APawn* Pawn, ULyraAbilitySystemComponent* LyraASC, bool Value)
 {
 	ULyraInputComponent* LyraIC = Cast<ULyraInputComponent>(Pawn->InputComponent);
 	if(!LyraIC) return;
@@ -53,7 +67,7 @@ void UVehicleExtensionComponent::SetAbilities(APawn* Pawn, bool Value)
 	}
 }
 
-void UVehicleExtensionComponent::SetInputs(APawn* Pawn, bool Value)
+void UVehicleExtensionComponent::SetInputs(APawn* Pawn, ULyraAbilitySystemComponent* LyraASC, bool Value)
 {
 	APlayerController* PawnController = Pawn->GetController<APlayerController>();
 	if(!PawnController) return;
@@ -68,7 +82,6 @@ void UVehicleExtensionComponent::SetInputs(APawn* Pawn, bool Value)
 	Options.bForceImmediately = false;
 	Options.bNotifyUserSettings = false;
 	Options.bIgnoreAllPressedKeysUntilRelease = false;
-
 	
 	PawnController->SetViewTargetWithBlend(Value ? GetOwner() : Pawn);
 	if(Value)
@@ -78,17 +91,13 @@ void UVehicleExtensionComponent::SetInputs(APawn* Pawn, bool Value)
 			CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
 		}
 
-		switch (PawnType)
+		if(IsPassenger(LyraASC))
 		{
-		case Vehicle::None:
-			break;
-		case Vehicle::Driver:
-			Subsystem->AddMappingContext(DriverMappingContext, 1, Options);
-			break;
-		case Vehicle::Passenger:
 			Subsystem->AddMappingContext(PassengerMappingContext, 1, Options);
-			break;
-		default: ;
+		}
+		if(IsDriver(LyraASC))
+		{
+			Subsystem->AddMappingContext(DriverMappingContext, 1, Options);
 		}
 	}
 	else
@@ -103,10 +112,9 @@ void UVehicleExtensionComponent::SetInputs(APawn* Pawn, bool Value)
 	}
 }
 
-void UVehicleExtensionComponent::SetAttachments(APawn* Pawn, bool Value)
+void UVehicleExtensionComponent::SetAttachments(APawn* Pawn, ULyraAbilitySystemComponent* LyraASC, bool Value)
 {
-	//SetPawnHidden(Pawn, Value);
-
+	SetPawnHidden(Pawn, Value);
 	Pawn->SetActorEnableCollision(!Value);
 	if(Value)
 	{
@@ -122,66 +130,61 @@ void UVehicleExtensionComponent::SetAttachments(APawn* Pawn, bool Value)
 	}
 }
 
-void UVehicleExtensionComponent::OnVehicleEnter_Implementation(AActor* InInstigator, ULyraAbilitySystemComponent* InLyraASC)
+void UVehicleExtensionComponent::OnVehicleEnter_Implementation(AActor* PawnInstigator, ULyraAbilitySystemComponent* LyraASC)
 {
 	if(Driver && Passenger) return;
 	
-	LyraASC = InLyraASC;
-	auto* ComponentOwner = Cast<APawn>(GetOwner());
-	auto* Pawn = Cast<APawn>(InInstigator);
+	auto* VehiclePawn = Cast<APawn>(GetOwner());
+	auto* Pawn = Cast<APawn>(PawnInstigator);
 
 	if(!Driver)
 	{
-		PawnType = Vehicle::Driver;
+		LyraASC->AddLooseGameplayTag(Vehicle_PawnType_Driver);
 		Driver = Pawn;
-		ComponentOwner->Controller = Pawn->Controller;
-		Execute_OnVehicleEnter(GetOwner(), InInstigator, InLyraASC);
+		VehiclePawn->Controller = Pawn->Controller;
+		Execute_OnVehicleEnter(VehiclePawn, PawnInstigator, LyraASC);
 	}
-	else
+	else if(!Passenger)
 	{
-		PawnType = Vehicle::Passenger;
+		LyraASC->AddLooseGameplayTag(Vehicle_PawnType_Passenger);
 		Passenger = Pawn;
-		if(!InInstigator->HasAuthority() || InInstigator->GetNetMode() == NM_Standalone)
-		{
-			ComponentOwner->Controller = Pawn->Controller;
-		}
 	}
 
-	SetAbilities(Pawn, true);
-	SetInputs(Pawn, true);
-	SetAttachments(Pawn, true);
+	SetAbilities(Pawn, LyraASC, true);
+	SetInputs(Pawn, LyraASC, true);
+	SetAttachments(Pawn, LyraASC, true);
 }
 
-void UVehicleExtensionComponent::OnVehicleExit_Implementation(AActor* InInstigator, ULyraAbilitySystemComponent* InLyraASC)
+void UVehicleExtensionComponent::OnVehicleExit_Implementation(AActor* PawnInstigator, ULyraAbilitySystemComponent* LyraASC)
 {
-	auto* ComponentOwner = Cast<APawn>(GetOwner());
-	auto* Pawn = Cast<APawn>(InInstigator);
+	auto* VehiclePawn = Cast<APawn>(GetOwner());
+	auto* Pawn = Cast<APawn>(PawnInstigator);
+
+	const bool bDriver = IsDriver(LyraASC);
+	const bool bPassenger = IsPassenger(LyraASC);
 	
-	if(PawnType == Vehicle::Driver)
+	if(bDriver)
 	{
-		Execute_OnVehicleExit(GetOwner(), InInstigator, InLyraASC);
+		Execute_OnVehicleExit(VehiclePawn, PawnInstigator, LyraASC);
 	}
 
-	SetAbilities(Pawn, false);
-	SetInputs(Pawn, false);
-	SetAttachments(Pawn, false);
+	SetAbilities(Pawn, LyraASC, false);
+	SetInputs(Pawn, LyraASC, false);
+	SetAttachments(Pawn, LyraASC, false);
 	
-	if(PawnType == Vehicle::Driver)
+	if(bDriver)
 	{
+		LyraASC->RemoveLooseGameplayTag(Vehicle_PawnType_Driver);
+		check(LyraASC->GetGameplayTagCount(Vehicle_PawnType_Driver) == 0);
 		Driver = nullptr;
-		ComponentOwner->Controller = nullptr;
+		VehiclePawn->Controller = nullptr;
 	}
-	if(PawnType == Vehicle::Passenger)
+	if(bPassenger)
 	{
+		LyraASC->RemoveLooseGameplayTag(Vehicle_PawnType_Passenger);
+		check(LyraASC->GetGameplayTagCount(Vehicle_PawnType_Passenger) == 0);
 		Passenger = nullptr;
-		if(!InInstigator->HasAuthority() || InInstigator->GetNetMode() == NM_Standalone)
-		{
-			ComponentOwner->Controller = nullptr;
-		}
 	}
-	
-	PawnType = Vehicle::None;
-	LyraASC = nullptr;
 }
 
 void UVehicleExtensionComponent::SetPawnHidden(APawn* Pawn, bool Value)
@@ -237,11 +240,35 @@ void UVehicleExtensionComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 
 void UVehicleExtensionComponent::Input_AbilityInputTagPressed(FGameplayTag InputTag)
 {
+	const auto Controller = Cast<APawn>(GetOwner())->Controller;
+	if(!Controller) return;
+
+	const APawn* Pawn = Controller->GetPawn();
+	if(!Pawn) return;
+
+	auto* PawnExtComp = ULyraPawnExtensionComponent::FindPawnExtensionComponent(Pawn);
+	if (!PawnExtComp) return;
+
+	auto* LyraASC = PawnExtComp->GetLyraAbilitySystemComponent();
+	if (!LyraASC) return;
+	
 	LyraASC->AbilityInputTagPressed(InputTag);
 }
 
 void UVehicleExtensionComponent::Input_AbilityInputTagReleased(FGameplayTag InputTag)
 {
+	const auto Controller = Cast<APawn>(GetOwner())->Controller;
+	if(!Controller) return;
+
+	const APawn* Pawn = Controller->GetPawn();
+	if(!Pawn) return;
+
+	const auto* PawnExtComp = ULyraPawnExtensionComponent::FindPawnExtensionComponent(Pawn);
+	if (!PawnExtComp) return;
+
+	auto* LyraASC = PawnExtComp->GetLyraAbilitySystemComponent();
+	if (!LyraASC) return;
+	
 	LyraASC->AbilityInputTagReleased(InputTag);
 }
 

@@ -14,18 +14,6 @@ class ULyraCameraComponent;
 class UInputMappingContext;
 class ULyraInputConfig;
 
-namespace Vehicle
-{
-	UENUM()
-	enum EPawnType
-	{
-		None,
-		Driver,
-		Passenger
-	};
-}
-
-
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class GTAVEHICLESRUNTIME_API UVehicleExtensionComponent : public UActorComponent, public IVehicle
 {
@@ -33,6 +21,9 @@ class GTAVEHICLESRUNTIME_API UVehicleExtensionComponent : public UActorComponent
 
 public:	
 	UVehicleExtensionComponent();
+
+	static bool IsDriver(ULyraAbilitySystemComponent* LyraASC);
+	static bool IsPassenger(ULyraAbilitySystemComponent* LyraASC);
 
 	void AddToNativeInputHandle(int32 Handle);
 	const ULyraInputConfig* GetInputConfig() const;
@@ -50,9 +41,9 @@ protected:
 
 protected:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void OnVehicleEnter(AActor* InInstigator, ULyraAbilitySystemComponent* InLyraASC);
+	void OnVehicleEnter(AActor* PawnInstigator, ULyraAbilitySystemComponent* LyraASC);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void OnVehicleExit(AActor* InInstigator, ULyraAbilitySystemComponent* InLyraASC);
+	void OnVehicleExit(AActor* PawnInstigator, ULyraAbilitySystemComponent* LyraASC);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -63,9 +54,9 @@ private:
 	TSubclassOf<ULyraCameraMode> DetermineCameraMode() const;
 	void SetPawnHidden(APawn* Pawn, bool Value);
 	
-	void SetAbilities(APawn* Pawn, bool Value);
-	void SetInputs(APawn* Pawn, bool Value);
-	void SetAttachments(APawn* Pawn, bool Value);
+	void SetAbilities(APawn* Pawn, ULyraAbilitySystemComponent* LyraASC, bool Value);
+	void SetInputs(APawn* Pawn, ULyraAbilitySystemComponent* LyraASC, bool Value);
+	void SetAttachments(APawn* Pawn, ULyraAbilitySystemComponent* LyraASC, bool Value);
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="GTA|Vehicle")
@@ -84,7 +75,6 @@ protected:
 	FInteractionOption Option;
 
 private:
-	Vehicle::EPawnType PawnType;
 	FVector EnteredRelativePosition;
 	
 	FLyraAbilitySet_GrantedHandles LoadedAbilitySetHandles;
@@ -95,9 +85,6 @@ private:
 
 	UPROPERTY(Replicated)
 	TObjectPtr<APawn> Passenger;
-	
-	UPROPERTY()
-	TObjectPtr<ULyraAbilitySystemComponent> LyraASC;
 
 	UPROPERTY()
 	TObjectPtr<UInputAction> VehicleExitInput;

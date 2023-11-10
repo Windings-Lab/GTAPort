@@ -3,23 +3,20 @@
 
 #include "Bike/BicycleVehicle.h"
 
-#include "VehicleExtensionComponent.h"
-#include "Input/LyraInputComponent.h"
+#include "ChaosVehicleMovementComponent.h"
 
-void ABicycleVehicle::OnVehicleEnter_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
+ABicycleVehicle::ABicycleVehicle(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
-	Super::OnVehicleEnter_Implementation(CarInstigator, LyraASC);
-	if(ULyraInputComponent* LyraIC = Cast<ULyraInputComponent>(CarInstigator->InputComponent))
-	{
-		// if (const UInputAction* IA
-		// 	= VehicleExtensionComponent->GetInputConfig()->FindNativeInputActionForTag(LyraGameplayTags::InputTag_Native_Move, false))
-		// {
-		// 	VehicleExtensionComponent->AddToNativeInputHandle(LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Move).GetHandle());
-		// }
-	}
 }
 
-void ABicycleVehicle::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
+void ABicycleVehicle::Tick(float DeltaSeconds)
 {
-	Super::OnVehicleExit_Implementation(CarInstigator, LyraASC);
+	auto* VehMovement = GetVehicleMovement();
+
+	VehMovement->SetThrottleInput(MoveInput.Y);
+	VehMovement->SetBrakeInput(MoveInput.Z);
+	VehMovement->SetSteeringInput(MoveInput.X);
+
+	Super::Tick(DeltaSeconds);
 }

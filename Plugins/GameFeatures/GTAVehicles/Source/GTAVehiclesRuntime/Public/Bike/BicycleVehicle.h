@@ -2,19 +2,20 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GTAWheeledVehicle.h"
+#include "GTAVehicle.h"
 #include "BicycleVehicle.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class GTAVEHICLESRUNTIME_API ABicycleVehicle : public AGTAWheeledVehicle
+class GTAVEHICLESRUNTIME_API ABicycleVehicle : public AGTAVehicle
 {
 	GENERATED_BODY()
 
+public:
+	ABicycleVehicle(const FObjectInitializer& ObjectInitializer);
+
 protected:
-	virtual void OnVehicleEnter_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC) override;
-	virtual void OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC) override;
+	virtual void Tick(float DeltaSeconds) override;
 };
