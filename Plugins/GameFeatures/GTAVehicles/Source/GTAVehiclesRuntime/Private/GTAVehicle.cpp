@@ -92,6 +92,11 @@ bool AGTAVehicle::PrintVariables() const
 	return false;
 }
 
+bool AGTAVehicle::InputDetected() const
+{
+	return !MoveInput.IsZero() || RollInput || PitchInput || YawInput;
+}
+
 void AGTAVehicle::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

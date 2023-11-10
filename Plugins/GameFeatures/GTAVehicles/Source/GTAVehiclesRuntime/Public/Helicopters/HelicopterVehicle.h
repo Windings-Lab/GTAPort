@@ -14,9 +14,6 @@ public:
 	// Sets default values for this pawn's properties
 	AHelicopterVehicle(const FObjectInitializer& ObjectInitializer);
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void K2_OnRotateBlades(float DeltaTime);
-
 protected:
 	virtual void Tick(float DeltaTime) override;
 	

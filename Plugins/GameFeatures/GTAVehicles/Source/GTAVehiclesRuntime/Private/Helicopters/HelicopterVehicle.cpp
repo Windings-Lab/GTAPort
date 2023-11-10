@@ -59,8 +59,7 @@ void AHelicopterVehicle::UpdateLinearForce(float DT)
 
 void AHelicopterVehicle::AddLinearForce(float DT)
 {
-	const bool InputDetected = !MoveInput.IsZero() || RollInput || PitchInput || YawInput;
-	if(bBladesAtMaxSpeed && !InputDetected)
+	if(bBladesAtMaxSpeed && !InputDetected())
 	{
 		const FVector TargetVelocity = FMath::VInterpTo(GetVelocity(), FVector::ZeroVector, DT, 0.5f);
 		GetMesh()->SetPhysicsLinearVelocity(TargetVelocity);
@@ -127,6 +126,5 @@ void AHelicopterVehicle::UpdateBladeRotationSpeed(float DT)
 	BladeRotationSpeed += DT * BladeAcceleration;
 	BladeRotationSpeed = FMath::Clamp(BladeRotationSpeed, 0.f, MaxBladeRotationSpeed);
 	bBladesAtMaxSpeed = BladeRotationSpeed >= MaxBladeRotationSpeed;
-	K2_OnRotateBlades(DT);
 }
 

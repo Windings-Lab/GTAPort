@@ -13,12 +13,15 @@ class GTAVEHICLESRUNTIME_API AAircraftVehicle : public AGTAVehicle
 public:
 	AAircraftVehicle(const FObjectInitializer& ObjectInitializer);
 
+	// TODO: Move implementation to animation blueprint
 	UFUNCTION(BlueprintImplementableEvent)
 	void K2_OnUpdateYaw();
 
+	// TODO: Move implementation to animation blueprint
 	UFUNCTION(BlueprintImplementableEvent)
 	void K2_OnUpdatePitch();
-	
+
+	// TODO: Move implementation to animation blueprint
 	UFUNCTION(BlueprintImplementableEvent)
 	void K2_OnUpdateRoll();
 

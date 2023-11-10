@@ -33,6 +33,8 @@ protected:
 
 	virtual bool PrintVariables() const;
 
+	bool InputDetected() const;
+
 private:
 	void Input_Move(const struct FInputActionValue& InputActionValue);
 	UFUNCTION(Server, Reliable)
