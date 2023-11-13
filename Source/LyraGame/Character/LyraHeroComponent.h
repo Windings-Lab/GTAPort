@@ -46,10 +46,14 @@ public:
 	void ClearAbilityCameraMode(const FGameplayAbilitySpecHandle& OwningSpecHandle);
 
 	/** Adds mode-specific input config */
-	void AddAdditionalInputConfig(const ULyraInputConfig* InputConfig);
+	TArray<uint32> AddAdditionalInputConfig(const ULyraInputConfig* InputConfig);
 
 	/** Removes a mode-specific input config if it has been added */
 	void RemoveAdditionalInputConfig(const ULyraInputConfig* InputConfig);
+	void RemoveAdditionalInputConfig(TArray<uint32>& BindHandles);
+
+	void AddAdditionalMappingContext(const UInputMappingContext* MappingContext, int32 Priority);
+	void RemoveAdditionalMappingContext(const UInputMappingContext* MappingContext);
 
 	/** True if this is controlled by a real player and has progressed far enough in initialization where additional input bindings can be added */
 	bool IsReadyToBindInputs() const;

@@ -300,21 +300,21 @@ void ULyraHeroComponent::InitializePlayerInput(UInputComponent* PlayerInputCompo
 	UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(const_cast<APawn*>(Pawn), NAME_BindInputsNow);
 }
 
-void ULyraHeroComponent::AddAdditionalInputConfig(const ULyraInputConfig* InputConfig)
+TArray<uint32> ULyraHeroComponent::AddAdditionalInputConfig(const ULyraInputConfig* InputConfig)
 {
 	TArray<uint32> BindHandles;
 
 	const APawn* Pawn = GetPawn<APawn>();
 	if (!Pawn)
 	{
-		return;
+		return BindHandles;
 	}
 	
 	const APlayerController* PC = GetController<APlayerController>();
-	check(PC);
+	if(!PC) return BindHandles;
 
 	const ULocalPlayer* LP = PC->GetLocalPlayer();
-	check(LP);
+	if(!LP) return BindHandles;
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
 	check(Subsystem);
@@ -327,11 +327,85 @@ void ULyraHeroComponent::AddAdditionalInputConfig(const ULyraInputConfig* InputC
 			LyraIC->BindAbilityActions(InputConfig, this, &ThisClass::Input_AbilityInputTagPressed, &ThisClass::Input_AbilityInputTagReleased, /*out*/ BindHandles);
 		}
 	}
+
+	return BindHandles;
 }
 
 void ULyraHeroComponent::RemoveAdditionalInputConfig(const ULyraInputConfig* InputConfig)
 {
 	//@TODO: Implement me!
+}
+
+void ULyraHeroComponent::RemoveAdditionalInputConfig(TArray<uint32>& BindHandles)
+{
+	const APawn* Pawn = GetPawn<APawn>();
+	if (!Pawn)
+	{
+		return;
+	}
+	
+	const APlayerController* PC = GetController<APlayerController>();
+	if(!PC) return;
+
+	const ULocalPlayer* LP = PC->GetLocalPlayer();
+	if(!LP) return;
+
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+	check(Subsystem);
+
+	if (const ULyraPawnExtensionComponent* PawnExtComp = ULyraPawnExtensionComponent::FindPawnExtensionComponent(Pawn))
+	{
+		ULyraInputComponent* LyraIC = Pawn->FindComponentByClass<ULyraInputComponent>();
+		if (ensureMsgf(LyraIC, TEXT("Unexpected Input Component class! The Gameplay Abilities will not be bound to their inputs. Change the input component to ULyraInputComponent or a subclass of it.")))
+		{
+			LyraIC->RemoveBinds(BindHandles);
+		}
+	}
+}
+
+void ULyraHeroComponent::AddAdditionalMappingContext(const UInputMappingContext* MappingContext, int32 Priority)
+{
+	const APawn* Pawn = GetPawn<APawn>();
+	if (!Pawn)
+	{
+		return;
+	}
+
+	APlayerController* PawnController = Pawn->GetController<APlayerController>();
+	if(!PawnController) return;
+	
+	const ULyraLocalPlayer* LP = Cast<ULyraLocalPlayer>(PawnController->GetLocalPlayer());
+	if(!LP) return;
+	
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+	check(Subsystem);
+
+	Subsystem->AddMappingContext(MappingContext, Priority);
+}
+
+void ULyraHeroComponent::RemoveAdditionalMappingContext(const UInputMappingContext* MappingContext)
+{
+	const APawn* Pawn = GetPawn<APawn>();
+	if (!Pawn)
+	{
+		return;
+	}
+
+	APlayerController* PawnController = Pawn->GetController<APlayerController>();
+	if(!PawnController) return;
+	
+	const ULyraLocalPlayer* LP = Cast<ULyraLocalPlayer>(PawnController->GetLocalPlayer());
+	if(!LP) return;
+	
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+	check(Subsystem);
+
+	FModifyContextOptions Options;
+	Options.bForceImmediately = true;
+	Options.bNotifyUserSettings = false;
+	Options.bIgnoreAllPressedKeysUntilRelease = true;
+
+	Subsystem->RemoveMappingContext(MappingContext, Options);
 }
 
 bool ULyraHeroComponent::IsReadyToBindInputs() const

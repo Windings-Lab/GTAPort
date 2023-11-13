@@ -122,7 +122,7 @@ bool AHelicopterVehicle::PrintVariables() const
 
 void AHelicopterVehicle::UpdateBladeRotationSpeed(float DT)
 {
-	const float BladeAcceleration = VehicleExtensionComponent->DriverEntered() ? 200.f : -200.f;
+	const float BladeAcceleration = VehicleExtensionComponent->WithDriver() ? 200.f : -200.f;
 	BladeRotationSpeed += DT * BladeAcceleration;
 	BladeRotationSpeed = FMath::Clamp(BladeRotationSpeed, 0.f, MaxBladeRotationSpeed);
 	bBladesAtMaxSpeed = BladeRotationSpeed >= MaxBladeRotationSpeed;

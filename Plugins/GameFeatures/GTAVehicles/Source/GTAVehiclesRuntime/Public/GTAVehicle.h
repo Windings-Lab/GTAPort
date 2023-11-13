@@ -51,6 +51,8 @@ private:
 	void Input_Yaw(const FInputActionValue& InputActionValue);
 	UFUNCTION(Server, Reliable)
 	void Server_Input_Yaw(float InputValue);
+
+	void Input_Exit();
 	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -67,4 +69,8 @@ protected:
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category="Input")
 	float RollInput;
+
+private:
+	UPROPERTY()
+	TObjectPtr<class UInputAction> VehicleExitInput;
 };

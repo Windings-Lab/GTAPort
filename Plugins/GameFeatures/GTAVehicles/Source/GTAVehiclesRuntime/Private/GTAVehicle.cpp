@@ -5,14 +5,19 @@
 
 #include "GTAVehicleGameplayTags.h"
 #include "VehicleExtensionComponent.h"
+#include "AbilitySystem/LyraAbilitySystemComponent.h"
 #include "Camera/LyraCameraComponent.h"
+#include "Character/LyraCharacter.h"
 #include "Input/LyraInputComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
 
+UE_DEFINE_GAMEPLAY_TAG_STATIC(Ability_Behavior_VehicleControl, "Ability.Behavior.VehicleControl");
+
 AGTAVehicle::AGTAVehicle(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	AIControllerClass = nullptr;
 	SetReplicates(true);
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
@@ -22,6 +27,10 @@ AGTAVehicle::AGTAVehicle(const FObjectInitializer& ObjectInitializer)
 	VehicleExtensionComponent = CreateDefaultSubobject<UVehicleExtensionComponent>(TEXT("VehicleExtensionComponent"));
 	VehicleExtensionComponent->CameraComponent = CreateDefaultSubobject<ULyraCameraComponent>(TEXT("CameraComponent"));
 	VehicleExtensionComponent->CameraComponent->SetupAttachment(RootComponent);
+
+	static const auto VehicleExitInputPath = L"/Script/EnhancedInput.InputAction'/GTAVehicles/Input/Actions/IA_VehicleExit.IA_VehicleExit'";
+	static const ConstructorHelpers::FObjectFinder<UInputAction> VehicleExitInputObj(VehicleExitInputPath);
+	VehicleExitInput = VehicleExitInputObj.Object;
 }
 void AGTAVehicle::GatherInteractionOptions(const FInteractionQuery& InteractQuery,
                                                   FInteractionOptionBuilder& OptionBuilder)
@@ -64,6 +73,9 @@ void AGTAVehicle::OnVehicleEnter_Implementation(AActor* PawnInstigator, ULyraAbi
 		VehicleExtensionComponent->AddToNativeInputHandle(
 			LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Roll).GetHandle());
 	}
+
+	VehicleExtensionComponent->AddToNativeInputHandle(
+		LyraIC->BindAction(VehicleExitInput, ETriggerEvent::Triggered, this, &ThisClass::Input_Exit).GetHandle());
 }
 void AGTAVehicle::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
 {
@@ -160,6 +172,15 @@ void AGTAVehicle::Input_Yaw(const FInputActionValue& InputActionValue)
 void AGTAVehicle::Server_Input_Yaw_Implementation(float InputValue)
 {
 	YawInput = InputValue;
+}
+
+void AGTAVehicle::Input_Exit()
+{
+	auto* Pawn = Controller->GetPawn<ALyraCharacter>();
+	auto* LyraASC = Pawn->GetLyraAbilitySystemComponent();
+	FGameplayTagContainer GameplayTagContainer;
+	GameplayTagContainer.AddTag(Ability_Behavior_VehicleControl);
+	LyraASC->CancelAbilities(&GameplayTagContainer);
 }
 // **********************
 // ~ Input ~

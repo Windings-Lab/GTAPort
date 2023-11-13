@@ -2,17 +2,11 @@
 
 #pragma once
 
-#include "AbilitySystem/LyraAbilitySet.h"
 #include "Components/ActorComponent.h"
 #include "Interaction/InteractionOption.h"
 #include "Interfaces/Vehicle.h"
+#include "AbilitySystem/LyraAbilitySet.h"
 #include "VehicleExtensionComponent.generated.h"
-
-class UInputAction;
-class ULyraCameraMode;
-class ULyraCameraComponent;
-class UInputMappingContext;
-class ULyraInputConfig;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class GTAVEHICLESRUNTIME_API UVehicleExtensionComponent : public UActorComponent, public IVehicle
@@ -22,19 +16,16 @@ class GTAVEHICLESRUNTIME_API UVehicleExtensionComponent : public UActorComponent
 public:	
 	UVehicleExtensionComponent();
 
-	static bool IsDriver(ULyraAbilitySystemComponent* LyraASC);
-	static bool IsPassenger(ULyraAbilitySystemComponent* LyraASC);
-
 	void AddToNativeInputHandle(int32 Handle);
-	const ULyraInputConfig* GetInputConfig() const;
+	const class ULyraInputConfig* GetInputConfig() const;
 
 	FInteractionOption& GetInteractionOption();
 
-	bool DriverEntered() const;
+	bool WithDriver() const;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TObjectPtr<ULyraCameraComponent> CameraComponent;
+	TObjectPtr<class ULyraCameraComponent> CameraComponent;
 
 protected:
 	virtual void BeginPlay() override;
@@ -48,10 +39,7 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-	void Input_AbilityInputTagPressed(FGameplayTag InputTag);
-	void Input_AbilityInputTagReleased(FGameplayTag InputTag);
-
-	TSubclassOf<ULyraCameraMode> DetermineCameraMode() const;
+	TSubclassOf<class ULyraCameraMode> DetermineCameraMode() const;
 	void SetPawnHidden(APawn* Pawn, bool Value);
 	
 	void SetAbilities(APawn* Pawn, ULyraAbilitySystemComponent* LyraASC, bool Value);
@@ -60,13 +48,13 @@ private:
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="GTA|Vehicle")
-	TObjectPtr<ULyraAbilitySet> AbilitySetToGrant;
+	TObjectPtr<class ULyraAbilitySet> AbilitySetToGrant;
 
-	UPROPERTY(EditDefaultsOnly, Getter, BlueprintReadWrite, Category="GTA|Vehicle")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="GTA|Vehicle")
 	TObjectPtr<ULyraInputConfig> InputConfig;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="GTA|Vehicle")
-	TObjectPtr<UInputMappingContext> DriverMappingContext;
+	TObjectPtr<class UInputMappingContext> MappingContext;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Lyra|Camera")
 	TSubclassOf<ULyraCameraMode> CameraMode;
@@ -75,20 +63,11 @@ protected:
 	FInteractionOption Option;
 
 private:
+	UPROPERTY(Replicated)
+	bool bDriverEntered;
+	
 	FVector EnteredRelativePosition;
 	
 	FLyraAbilitySet_GrantedHandles LoadedAbilitySetHandles;
 	TArray<uint32> LoadedBindHandles;
-
-	UPROPERTY(Replicated)
-	TObjectPtr<APawn> Driver;
-
-	UPROPERTY(Replicated)
-	TObjectPtr<APawn> Passenger;
-
-	UPROPERTY()
-	TObjectPtr<UInputAction> VehicleExitInput;
-
-	UPROPERTY()
-	TObjectPtr<UInputMappingContext> PassengerMappingContext;
 };
