@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "Vehicle.generated.h"
 
+class ALyraCharacter;
+class USeatZoneComponent;
 class ULyraAbilitySystemComponent;
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI, Blueprintable)
@@ -24,7 +25,7 @@ class GTAVEHICLESRUNTIME_API IVehicle
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void OnVehicleEnter(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC);
+	void OnVehicleEnter(ALyraCharacter* PawnInstigator, USeatZoneComponent* SeatZone);
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void OnVehicleExit(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC);
+	void OnVehicleExit(ALyraCharacter* PawnInstigator, USeatZoneComponent* SeatZone);
 };

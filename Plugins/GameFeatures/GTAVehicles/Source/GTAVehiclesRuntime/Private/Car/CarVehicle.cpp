@@ -4,6 +4,18 @@
 #include "Car/CarVehicle.h"
 
 #include "ChaosVehicleMovementComponent.h"
+#include "SeatZoneComponent.h"
+
+ACarVehicle::ACarVehicle(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+}
+
+void ACarVehicle::BeginPlay()
+{
+	Super::BeginPlay();
+	SetSeatController(ESeatType::Passenger, nullptr);
+}
 
 void ACarVehicle::Tick(float DeltaSeconds)
 {

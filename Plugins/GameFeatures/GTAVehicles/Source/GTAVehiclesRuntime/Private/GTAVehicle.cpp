@@ -4,15 +4,13 @@
 #include "GTAVehicle.h"
 
 #include "GTAVehicleGameplayTags.h"
+#include "SeatZoneComponent.h"
 #include "VehicleExtensionComponent.h"
 #include "AbilitySystem/LyraAbilitySystemComponent.h"
-#include "Camera/LyraCameraComponent.h"
 #include "Character/LyraCharacter.h"
 #include "Input/LyraInputComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
-
-UE_DEFINE_GAMEPLAY_TAG_STATIC(Ability_Behavior_VehicleControl, "Ability.Behavior.VehicleControl");
 
 AGTAVehicle::AGTAVehicle(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -25,31 +23,34 @@ AGTAVehicle::AGTAVehicle(const FObjectInitializer& ObjectInitializer)
 	GetMesh()->BodyInstance.bSimulatePhysics = true;
 	
 	VehicleExtensionComponent = CreateDefaultSubobject<UVehicleExtensionComponent>(TEXT("VehicleExtensionComponent"));
-	VehicleExtensionComponent->CameraComponent = CreateDefaultSubobject<ULyraCameraComponent>(TEXT("CameraComponent"));
-	VehicleExtensionComponent->CameraComponent->SetupAttachment(RootComponent);
-
-	static const auto VehicleExitInputPath = L"/Script/EnhancedInput.InputAction'/GTAVehicles/Input/Actions/IA_VehicleExit.IA_VehicleExit'";
-	static const ConstructorHelpers::FObjectFinder<UInputAction> VehicleExitInputObj(VehicleExitInputPath);
-	VehicleExitInput = VehicleExitInputObj.Object;
-}
-void AGTAVehicle::GatherInteractionOptions(const FInteractionQuery& InteractQuery,
-                                                  FInteractionOptionBuilder& OptionBuilder)
-{
-	OptionBuilder.AddInteractionOption(VehicleExtensionComponent->GetInteractionOption());
 }
 
-void AGTAVehicle::CustomizeInteractionEventData(const FGameplayTag& InteractionEventTag,
-	FGameplayEventData& InOutEventData)
+UVehicleExtensionComponent* AGTAVehicle::GetVehicleExtensionComponent() const
 {
-	InOutEventData.OptionalObject = VehicleExtensionComponent;
+	return VehicleExtensionComponent;
 }
 
-void AGTAVehicle::OnVehicleEnter_Implementation(AActor* PawnInstigator, ULyraAbilitySystemComponent* LyraASC)
+void AGTAVehicle::SetSeatController(ESeatType SeatType, AController* InController)
 {
+	if(!HasAuthority()) return;
+	
+	if(SeatType == ESeatType::Driver)
+	{
+		Controller = InController;
+		bDriverEntered = Controller != nullptr;
+	}
+}
+
+void AGTAVehicle::OnVehicleEnter_Implementation(ALyraCharacter* PawnInstigator, USeatZoneComponent* SeatZone)
+{
+	SetSeatController(SeatZone->GetSeatType(), PawnInstigator->Controller);
+	
 	ULyraInputComponent* LyraIC = Cast<ULyraInputComponent>(PawnInstigator->InputComponent);
 	if(!LyraIC) return;
 
-	const ULyraInputConfig* InputConfig = VehicleExtensionComponent->GetInputConfig();
+	const ULyraInputConfig* InputConfig = SeatZone->GetInputConfig();
+	if(!InputConfig) return;
+	
 	if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(GTAVehicleGameplayTags::InputTag_Native_Vehicle_Move, false))
 	{
 		VehicleExtensionComponent->AddToNativeInputHandle(
@@ -73,12 +74,10 @@ void AGTAVehicle::OnVehicleEnter_Implementation(AActor* PawnInstigator, ULyraAbi
 		VehicleExtensionComponent->AddToNativeInputHandle(
 			LyraIC->BindAction(IA, ETriggerEvent::Triggered, this, &ThisClass::Input_Roll).GetHandle());
 	}
-
-	VehicleExtensionComponent->AddToNativeInputHandle(
-		LyraIC->BindAction(VehicleExitInput, ETriggerEvent::Triggered, this, &ThisClass::Input_Exit).GetHandle());
 }
-void AGTAVehicle::OnVehicleExit_Implementation(AActor* CarInstigator, ULyraAbilitySystemComponent* LyraASC)
+void AGTAVehicle::OnVehicleExit_Implementation(ALyraCharacter* PawnInstigator, USeatZoneComponent* SeatZone)
 {
+	SetSeatController(SeatZone->GetSeatType(), nullptr);
 }
 
 bool AGTAVehicle::PrintVariables() const
@@ -113,10 +112,14 @@ void AGTAVehicle::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	FDoRepLifetimeParams SharedParams;
+
 	DOREPLIFETIME_CONDITION(ThisClass, MoveInput, COND_None)
 	DOREPLIFETIME_CONDITION(ThisClass, YawInput, COND_None)
 	DOREPLIFETIME_CONDITION(ThisClass, PitchInput, COND_None)
 	DOREPLIFETIME_CONDITION(ThisClass, RollInput, COND_None)
+
+	DOREPLIFETIME(ThisClass, bDriverEntered)
 }
 
 void AGTAVehicle::Tick(float DeltaSeconds)
@@ -125,6 +128,12 @@ void AGTAVehicle::Tick(float DeltaSeconds)
 
 	// ReSharper disable once CppExpressionWithoutSideEffects
 	PrintVariables();
+}
+
+void AGTAVehicle::BeginPlay()
+{
+	Super::BeginPlay();
+	SetSeatController(ESeatType::Driver, nullptr);
 }
 
 // **********************
@@ -172,15 +181,6 @@ void AGTAVehicle::Input_Yaw(const FInputActionValue& InputActionValue)
 void AGTAVehicle::Server_Input_Yaw_Implementation(float InputValue)
 {
 	YawInput = InputValue;
-}
-
-void AGTAVehicle::Input_Exit()
-{
-	auto* Pawn = Controller->GetPawn<ALyraCharacter>();
-	auto* LyraASC = Pawn->GetLyraAbilitySystemComponent();
-	FGameplayTagContainer GameplayTagContainer;
-	GameplayTagContainer.AddTag(Ability_Behavior_VehicleControl);
-	LyraASC->CancelAbilities(&GameplayTagContainer);
 }
 // **********************
 // ~ Input ~

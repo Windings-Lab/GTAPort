@@ -550,6 +550,20 @@ bool ALyraCharacter::UpdateSharedReplication()
 	return false;
 }
 
+TOptional<AActor*> ALyraCharacter::GetCameraPreventPenetrationTarget() const
+{
+	return OptionalCameraTarget;
+}
+
+void ALyraCharacter::SetOptionalCameraTarget(const TOptional<AActor*>& Value)
+{
+	OptionalCameraTarget.Reset();
+	if(Value.GetValue() != nullptr)
+	{
+		OptionalCameraTarget = Value;
+	}
+}
+
 void ALyraCharacter::FastSharedReplication_Implementation(const FSharedRepMovement& SharedRepMovement)
 {
 	if (GetWorld()->IsPlayingReplay())

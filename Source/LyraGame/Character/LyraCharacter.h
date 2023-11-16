@@ -6,6 +6,7 @@
 #include "GameplayCueInterface.h"
 #include "GameplayTagAssetInterface.h"
 #include "ModularCharacter.h"
+#include "Camera/LyraCameraAssistInterface.h"
 #include "Teams/LyraTeamAgentInterface.h"
 
 #include "LyraCharacter.generated.h"
@@ -93,7 +94,7 @@ struct TStructOpsTypeTraits<FSharedRepMovement> : public TStructOpsTypeTraitsBas
  *	New behavior should be added via pawn components when possible.
  */
 UCLASS(Config = Game, Meta = (ShortTooltip = "The base character pawn class used by this project."))
-class LYRAGAME_API ALyraCharacter : public AModularCharacter, public IAbilitySystemInterface, public IGameplayCueInterface, public IGameplayTagAssetInterface, public ILyraTeamAgentInterface
+class LYRAGAME_API ALyraCharacter : public AModularCharacter, public IAbilitySystemInterface, public IGameplayCueInterface, public IGameplayTagAssetInterface, public ILyraTeamAgentInterface, public ILyraCameraAssistInterface
 {
 	GENERATED_BODY()
 
@@ -146,6 +147,9 @@ public:
 	FSharedRepMovement LastSharedReplication;
 
 	virtual bool UpdateSharedReplication();
+
+	virtual TOptional<AActor*> GetCameraPreventPenetrationTarget() const override;
+	void SetOptionalCameraTarget(const TOptional<AActor*>& Value);
 
 protected:
 
@@ -207,6 +211,8 @@ private:
 
 	UPROPERTY()
 	FOnLyraTeamIndexChangedDelegate OnTeamChangedDelegate;
+
+	TOptional<AActor*> OptionalCameraTarget;
 
 protected:
 	// Called to determine what happens to the team ID when possession ends

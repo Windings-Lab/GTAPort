@@ -3,40 +3,39 @@
 
 #include "VehicleExtensionComponent.h"
 
-#include "AbilitySystem/LyraAbilitySystemComponent.h"
-#include "Camera/LyraCameraComponent.h"
-#include "Camera/LyraCameraMode.h"
+#include "GTAVehicle.h"
+#include "SeatZoneComponent.h"
+#include "Character/LyraCharacter.h"
 #include "Character/LyraHeroComponent.h"
-#include "Net/UnrealNetwork.h"
 
 UVehicleExtensionComponent::UVehicleExtensionComponent()
 {
 	SetIsReplicatedByDefault(true);
 }
 
-void UVehicleExtensionComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	check(AbilitySetToGrant && "AbilitySetToGrant not defined");
-	check(InputConfig && "InputConfig not defined");
-	check(MappingContext && "MappingContext not defined");
-}
-
-void UVehicleExtensionComponent::SetAbilities(APawn* Pawn, ULyraAbilitySystemComponent* LyraASC, bool Value)
+void UVehicleExtensionComponent::SetAbilities(ALyraCharacter* Pawn, const USeatZoneComponent* SeatZone, bool Value)
 {
 	auto* HeroComponent = ULyraHeroComponent::FindHeroComponent(Pawn);
 	if(!HeroComponent) return;
+
+	auto* LyraASC = Pawn->GetLyraAbilitySystemComponent();
+	if(!LyraASC) return;
 	
 	if(Value)
 	{
-		if(AbilitySetToGrant)
+		auto* AbilitySet = SeatZone->GetAbilitySet();
+		auto* InputConfig = SeatZone->GetInputConfig();
+		
+		if(AbilitySet)
 		{
-			AbilitySetToGrant->GiveToAbilitySystem(LyraASC, &LoadedAbilitySetHandles);
+			AbilitySet->GiveToAbilitySystem(LyraASC, &LoadedAbilitySetHandles);
 		}
 
-		const auto AdditionalBindHandles = HeroComponent->AddAdditionalInputConfig(InputConfig);
-		LoadedBindHandles.Append(AdditionalBindHandles);
+		if(InputConfig)
+		{
+			const auto AdditionalBindHandles = HeroComponent->AddAdditionalInputConfig(InputConfig);
+			LoadedBindHandles.Append(AdditionalBindHandles);
+		}
 	}
 	else
 	{
@@ -45,82 +44,48 @@ void UVehicleExtensionComponent::SetAbilities(APawn* Pawn, ULyraAbilitySystemCom
 	}
 }
 
-void UVehicleExtensionComponent::SetInputs(APawn* Pawn, ULyraAbilitySystemComponent* LyraASC, bool Value)
+void UVehicleExtensionComponent::SetInputs(ALyraCharacter* Pawn, const USeatZoneComponent* SeatZone, bool Value)
 {
 	auto* HeroComponent = ULyraHeroComponent::FindHeroComponent(Pawn);
 	if(!HeroComponent) return;
+
+	auto* MappingContext = SeatZone->GetMappingContext();
 	
-	APlayerController* PawnController = Pawn->GetController<APlayerController>();
-	if(!PawnController) return;
-	
-	PawnController->SetViewTargetWithBlend(Value ? GetOwner() : Pawn);
 	if(Value)
 	{
-		if(CameraComponent)
+		if(MappingContext)
 		{
-			CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
+			HeroComponent->AddAdditionalMappingContext(MappingContext, 1);
 		}
-
-		HeroComponent->AddAdditionalMappingContext(MappingContext, 1);
 	}
 	else
 	{
-		if(CameraComponent)
-		{
-			CameraComponent->DetermineCameraModeDelegate.Unbind();
-		}
 		
 		HeroComponent->RemoveAdditionalMappingContext(MappingContext);
 	}
 }
 
-void UVehicleExtensionComponent::SetAttachments(APawn* Pawn, ULyraAbilitySystemComponent* LyraASC, bool Value)
+void UVehicleExtensionComponent::OnVehicleEnter_Implementation(ALyraCharacter* PawnInstigator, USeatZoneComponent* SeatZone)
 {
-	SetPawnHidden(Pawn, Value);
-	Pawn->SetActorEnableCollision(!Value);
-	if(Value)
-	{
-		EnteredRelativePosition = GetOwner()->GetTransform().InverseTransformPosition(Pawn->GetActorLocation());
-	}
-	else
-	{
-		FVector WorldPosition = GetOwner()->GetTransform().TransformPosition(EnteredRelativePosition);
-		if(Pawn->HasAuthority())
-		{
-			Pawn->TeleportTo(WorldPosition, FRotator(0.f, 0.f, 0.f));
-		}
-	}
+	if(SeatZone->IsOccupied()) return;
+	SeatZone->SetPawn(PawnInstigator);
+	
+	auto* VehiclePawn = Cast<AGTAVehicle>(GetOwner());
+	
+	Execute_OnVehicleEnter(VehiclePawn, PawnInstigator, SeatZone);
+	
+	SetAbilities(PawnInstigator, SeatZone, true);
+	SetInputs(PawnInstigator, SeatZone, true);
 }
 
-void UVehicleExtensionComponent::OnVehicleEnter_Implementation(AActor* PawnInstigator, ULyraAbilitySystemComponent* LyraASC)
+void UVehicleExtensionComponent::OnVehicleExit_Implementation(ALyraCharacter* PawnInstigator, USeatZoneComponent* SeatZone)
 {
-	auto Test = PawnInstigator->GetNetMode();
-	auto* VehiclePawn = Cast<APawn>(GetOwner());
-	if(bDriverEntered) return;
-	
-	auto* Pawn = Cast<APawn>(PawnInstigator);
+	SeatZone->SetPawn(nullptr);
+	auto* VehiclePawn = Cast<AGTAVehicle>(GetOwner());
 
-	VehiclePawn->Controller = Pawn->Controller;
-	bDriverEntered = true;
-	Execute_OnVehicleEnter(VehiclePawn, PawnInstigator, LyraASC);
-	
-	SetAbilities(Pawn, LyraASC, true);
-	SetInputs(Pawn, LyraASC, true);
-	SetAttachments(Pawn, LyraASC, true);
-}
-
-void UVehicleExtensionComponent::OnVehicleExit_Implementation(AActor* PawnInstigator, ULyraAbilitySystemComponent* LyraASC)
-{
-	auto* VehiclePawn = Cast<APawn>(GetOwner());
-	auto* Pawn = Cast<APawn>(PawnInstigator);
-
-	Execute_OnVehicleExit(VehiclePawn, PawnInstigator, LyraASC);
-	SetAbilities(Pawn, LyraASC, false);
-	SetInputs(Pawn, LyraASC, false);
-	SetAttachments(Pawn, LyraASC, false);
-
-	VehiclePawn->Controller = nullptr;
-	bDriverEntered = false;
+	Execute_OnVehicleExit(VehiclePawn, PawnInstigator, SeatZone);
+	SetAbilities(PawnInstigator, SeatZone, false);
+	SetInputs(PawnInstigator, SeatZone, false);
 }
 
 void UVehicleExtensionComponent::SetPawnHidden(APawn* Pawn, bool Value)
@@ -141,29 +106,7 @@ void UVehicleExtensionComponent::AddToNativeInputHandle(int32 Handle)
 	LoadedBindHandles.Add(Handle);
 }
 
-const ULyraInputConfig* UVehicleExtensionComponent::GetInputConfig() const
-{
-	return InputConfig;
-}
-
 FInteractionOption& UVehicleExtensionComponent::GetInteractionOption()
 {
 	return Option;
-}
-
-bool UVehicleExtensionComponent::WithDriver() const
-{
-	return bDriverEntered;
-}
-
-void UVehicleExtensionComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME_CONDITION(ThisClass, bDriverEntered, COND_SkipOwner)
-}
-
-TSubclassOf<ULyraCameraMode> UVehicleExtensionComponent::DetermineCameraMode() const
-{
-	return CameraMode ? CameraMode : nullptr;
 }

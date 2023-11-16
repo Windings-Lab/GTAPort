@@ -13,6 +13,10 @@ class GTAVEHICLESRUNTIME_API ACarVehicle : public AGTAVehicle
 {
 	GENERATED_BODY()
 
+public:
+	ACarVehicle(const FObjectInitializer& ObjectInitializer);
+
 protected:
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 };
