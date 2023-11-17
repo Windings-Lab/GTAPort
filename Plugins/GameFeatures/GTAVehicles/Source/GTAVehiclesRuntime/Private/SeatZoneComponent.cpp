@@ -17,7 +17,7 @@ USeatZoneComponent::USeatZoneComponent() : SeatType(ESeatType::None), BindHandle
 	SetIsReplicatedByDefault(true);
 	
 	static const auto VehicleExitInputPath =
-		L"/Script/EnhancedInput.InputAction'/GTAVehicles/Input/Actions/IA_VehicleExit.IA_VehicleExit'";
+		L"/Script/EnhancedInput.InputAction'/Game/Input/Actions/Cook/IA_VehicleExit.IA_VehicleExit'";
 	static const ConstructorHelpers::FObjectFinder<UInputAction> VehicleExitInputObj(VehicleExitInputPath);
 	InputAction_Exit = VehicleExitInputObj.Object;
 }

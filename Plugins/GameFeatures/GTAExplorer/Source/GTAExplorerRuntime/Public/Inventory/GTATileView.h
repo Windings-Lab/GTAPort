@@ -22,7 +22,4 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetVerticalSpacing(float Value);
-
-protected:
-	virtual void PostLoad() override;
 };

@@ -17,9 +17,3 @@ void UGTATileView::SetVerticalSpacing(float Value)
 {
 	InitVerticalEntrySpacing(Value);
 }
-
-void UGTATileView::PostLoad()
-{
-	EntrySpacing = 0.f;
-	Super::PostLoad();
-}
